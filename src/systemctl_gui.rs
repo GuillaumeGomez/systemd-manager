@@ -3,6 +3,7 @@ extern crate pango;         // Allows manipulating font styles
 use systemctl;              // The command-line backend for handling systemctl
 use gtk::traits::*;         // Enables the usage of GTK traits
 
+// create_main_window() creates the main window for this program.
 pub fn create_main_window() -> gtk::Window {
 	let window = gtk::Window::new(gtk::WindowType::Toplevel).unwrap();
 	window.set_title("System Services");
@@ -16,6 +17,9 @@ pub fn create_main_window() -> gtk::Window {
 	return window;
 }
 
+// generate_services() creates a gtk::ScrolledWindow widget containing the list of units available
+// on the system. Each individual unit is created by get_unit_widget() and added to their respective
+// gtk::Box.
 pub fn generate_services() -> gtk::ScrolledWindow {
 	let scrolled_window = gtk::ScrolledWindow::new(None, None).unwrap();
 
@@ -43,11 +47,11 @@ pub fn generate_services() -> gtk::ScrolledWindow {
 		match unit.unit_type {
 			systemctl::UnitType::Service => {
 				service_list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
-				service_list.pack_start(&get_unit(unit), false, false, 3);
+				service_list.pack_start(&get_unit_widget(unit), false, false, 3);
 			},
 			systemctl::UnitType::Socket => {
 				socket_list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
-				socket_list.pack_start(&get_unit(unit), false, false, 3);
+				socket_list.pack_start(&get_unit_widget(unit), false, false, 3);
 			},
 		};
 	}
@@ -57,7 +61,8 @@ pub fn generate_services() -> gtk::ScrolledWindow {
 	return scrolled_window;
 }
 
-fn get_unit(unit: systemctl::SystemdUnit) -> gtk::Box {
+// get_unit_widget() takes a SystemdUnit and generates a gtk::Box widget from that information.
+fn get_unit_widget(unit: systemctl::SystemdUnit) -> gtk::Box {
 	let mut label_font = pango::FontDescription::new();
 	label_font.set_weight(pango::Weight::Heavy);
 	let label = gtk::Label::new(&unit.name).unwrap();
