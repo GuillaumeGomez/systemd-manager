@@ -42,8 +42,8 @@ pub fn generate_services() -> gtk::ScrolledWindow {
 	for unit in systemctl::get_unit_files() {
 		match unit.unit_type {
 			systemctl::UnitType::Service => {
-					service_list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
-					service_list.pack_start(&get_unit(unit), false, false, 3);
+				service_list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
+				service_list.pack_start(&get_unit(unit), false, false, 3);
 			},
 			systemctl::UnitType::Socket => {
 				socket_list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
