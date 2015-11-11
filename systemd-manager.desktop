@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Systemd Manager
+Icon=preferences-system
+Exec=gksu systemd-manager
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=GNOME;GTK;System;
+Keywords=Systemd;Systemctl;Services;
