@@ -21,8 +21,6 @@ pub fn create_main_window() -> gtk::Window {
 // on the system. Each individual unit is created by get_unit_widget() and added to their respective
 // gtk::Box.
 pub fn generate_services() -> gtk::ScrolledWindow {
-	let scrolled_window = gtk::ScrolledWindow::new(None, None).unwrap();
-
 	let mut label_font = pango::FontDescription::new();
 	label_font.set_weight(pango::Weight::Heavy);
 
@@ -57,17 +55,13 @@ pub fn generate_services() -> gtk::ScrolledWindow {
 	}
 
 	service_list.add(&socket_list);
+	let scrolled_window = gtk::ScrolledWindow::new(None, None).unwrap();
 	scrolled_window.add(&service_list);
 	return scrolled_window;
 }
 
 // get_unit_widget() takes a SystemdUnit and generates a gtk::Box widget from that information.
 fn get_unit_widget(unit: systemctl::SystemdUnit) -> gtk::Box {
-	let mut label_font = pango::FontDescription::new();
-	label_font.set_weight(pango::Weight::Heavy);
-	let label = gtk::Label::new(&unit.name).unwrap();
-	label.override_font(&label_font);
-
 	let new_button = |x: &str| gtk::Button::new_with_label(x).unwrap();
 	let switch = if unit.status { new_button("Disable") } else { new_button(" Enable") };
 	switch.set_halign(gtk::Align::End);
@@ -75,7 +69,10 @@ fn get_unit_widget(unit: systemctl::SystemdUnit) -> gtk::Box {
 	{ // Defines action when clicking the button. Consider this to be it's own thread.
 		let service_name: String = match unit.unit_type {
 			systemctl::UnitType::Socket => unit.name.clone(),
-			systemctl::UnitType::Service => unit.name.chars().take(unit.name.len()-8).collect(),
+			systemctl::UnitType::Service => {
+				let extension_char_count = if unit.name.contains(".timer") { 0 } else { 8 };
+				unit.name.chars().take(unit.name.len()-extension_char_count).collect()
+			},
 		};
 		switch.connect_clicked(move |switch| {
 			if &switch.get_label().unwrap() == "Disable" {
@@ -85,6 +82,11 @@ fn get_unit_widget(unit: systemctl::SystemdUnit) -> gtk::Box {
 			}
 		});
 	}
+
+	let mut label_font = pango::FontDescription::new();
+	label_font.set_weight(pango::Weight::Heavy);
+	let label = gtk::Label::new(&unit.name).unwrap();
+	label.override_font(&label_font);
 
 	let layout = gtk::Box::new(gtk::Orientation::Horizontal, 0).unwrap();
 	layout.pack_start(&label, false, false, 15);
