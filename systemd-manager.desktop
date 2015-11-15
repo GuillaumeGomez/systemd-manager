@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Systemd Manager
 Icon=preferences-system
-Exec=gksu systemd-manager
+Exec=pkexec systemd-manager
 Terminal=false
 Type=Application
 StartupNotify=true
