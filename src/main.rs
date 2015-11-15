@@ -1,5 +1,5 @@
 extern crate gtk;   // Enable the creation of GTK windows and widgets
-mod systemd_gui;  // Contains all of the heavy GUI-related work
+mod systemd_gui;    // Contains all of the heavy GUI-related work
 mod systemd_dbus;   // The dbus-based backend for systemd
 use gtk::traits::*; // Enables the usage of GTK traits
 
