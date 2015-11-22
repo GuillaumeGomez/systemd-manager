@@ -89,21 +89,22 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
 // containing services which can be enabled and disabled.
 pub fn collect_togglable_services(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
 	units.into_iter().filter(|x| x.utype == UnitType::Service && x.state != UnitState::Static &&
-		x.state != UnitState::Masked && !x.name.contains("/etc/")).collect()
+		x.state != UnitState::Masked && x.state != UnitState::Indirect &&
+		!x.name.contains("/etc/")).collect()
 }
 
 // collect_togglable_sockets takes a Vec<SystemdUnit> as input and returns a new vector only
 // containing sockets which can be enabled and disabled.
 pub fn collect_togglable_sockets(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
 	units.into_iter().filter(|x| x.utype == UnitType::Socket && x.state != UnitState::Static &&
-		x.state != UnitState::Masked).collect()
+		x.state != UnitState::Masked && x.state != UnitState::Indirect).collect()
 }
 
 // collect_togglable_timers takes a Vec<SystemdUnit> as input and returns a new vector only
 // containing timers which can be enabled and disabled.
 pub fn collect_togglable_timers(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
 	units.into_iter().filter(|x| x.utype == UnitType::Timer && x.state != UnitState::Static &&
-		x.state != UnitState::Masked).collect()
+		x.state != UnitState::Masked && x.state != UnitState::Indirect).collect()
 }
 
 // enable takes the pathname of a service and enables it via dbus.
