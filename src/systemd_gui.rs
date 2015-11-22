@@ -1,6 +1,5 @@
 extern crate gtk;    // Enable the creation of GTK windows and widgets
 extern crate pango;  // Allows manipulating font styles
-use std::path::Path; // Used to get the service name from the filepath
 use systemd_dbus;    // The dbus-based backend for systemd
 use gtk::traits::*;  // Enables the usage of GTK traits
 
@@ -84,12 +83,20 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
 		});
 	}
 
-	let get_unit_name = |x: &str| -> String {
-		let path = Path::new(x);
-		let filename = path.file_name().unwrap().to_str().unwrap();
-		let split_extension: Vec<&str> = filename.split('.').collect();
-		String::from(split_extension[0])
-	};
+	// Removes the directory path and extension from the unit name
+	fn get_unit_name(x: &str) -> String {
+		let mut output: String = {
+			let temp = String::from(x);
+			let mut split: Vec<&str> = temp.split('/').collect();
+			String::from(split.pop().unwrap())
+		};
+		let mut last_occurrence: usize = 0;
+		for (index, value) in output.chars().enumerate() {
+			if value == '.' { last_occurrence = index; }
+		}
+		output.truncate(last_occurrence);
+		return output
+	}
 
 	let mut label_font = pango::FontDescription::new();
 	label_font.set_weight(pango::Weight::Heavy);
