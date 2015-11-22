@@ -15,7 +15,7 @@ impl UnitType {
 	pub fn new(pathname: &str) -> UnitType {
 		match Path::new(pathname).extension().unwrap().to_str().unwrap() {
 			"automount" => UnitType::Automount,
-            "busname" => UnitType::Busname,
+			"busname" => UnitType::Busname,
 			"mount" => UnitType::Mount,
 			"path" => UnitType::Path,
 			"scope" => UnitType::Scope,
