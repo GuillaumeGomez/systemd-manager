@@ -9,12 +9,13 @@ pub struct SystemdUnit {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum UnitType { Automount, Mount, Path, Scope, Service, Slice, Socket, Target, Timer }
+pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer }
 impl UnitType {
 	// Takes the pathname of the unit as input to determine what type of unit it is.
 	pub fn new(pathname: &str) -> UnitType {
 		match Path::new(pathname).extension().unwrap().to_str().unwrap() {
 			"automount" => UnitType::Automount,
+            "busname" => UnitType::Busname,
 			"mount" => UnitType::Mount,
 			"path" => UnitType::Path,
 			"scope" => UnitType::Scope,
