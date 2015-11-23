@@ -76,7 +76,7 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
             let len = output.len()-10;
             output.truncate(len);
             output
-    };
+        };
     
         // This custom loop iterates across two variables at a time. The first variable contains the
         // pathname of the unit, while the second variable contains the state of that unit.
@@ -96,7 +96,7 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
     }
 
     let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
-    parse_message(&format!("{:?}", message));
+    parse_message(&format!("{:?}", message))
 }
 
 // collect_togglable_services takes a Vec<SystemdUnit> as input and returns a new vector only
