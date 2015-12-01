@@ -66,11 +66,13 @@ impl UnitState {
     }
 }
 
+pub enum SortMethod { Name, StateDisabled, StateEnabled }
+
 // list_unit_files() communicates with dbus to obtain a list of unit files and returns them as a
 // vector of SystemdUnits.
-pub fn list_unit_files() -> Vec<SystemdUnit> {
+pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
     // parse_message takes the dbus message as input and maps the information to a Vec<SystemdUnit>
-    fn parse_message(input: &str) -> Vec<SystemdUnit> {
+    fn parse_message(input: &str, sort_method: SortMethod) -> Vec<SystemdUnit> {
         let message = {
             let mut output: String = input.chars().skip(7).collect();
             let len = output.len()-10;
@@ -91,12 +93,26 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
             systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
         }
 
-        systemd_units.sort_by(|a, b| a.name.cmp(&b.name)); // Sort in ascending order
+        match sort_method {
+            SortMethod::Name => systemd_units.sort_by(|a, b| a.name.cmp(&b.name)),
+            SortMethod::StateEnabled => {
+                systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
+                systemd_units.sort_by(|a, b|
+                    (a.state == UnitState::Disabled).cmp(&(b.state == UnitState::Disabled))
+                );
+            },
+            SortMethod::StateDisabled => {
+                systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
+                systemd_units.sort_by(|a, b|
+                    (a.state == UnitState::Enabled).cmp(&(b.state == UnitState::Enabled))
+                );
+            }
+        }
         return systemd_units;
     }
 
     let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
-    parse_message(&format!("{:?}", message))
+    parse_message(&format!("{:?}", message), sort_method)
 }
 
 // collect_togglable_services takes a Vec<SystemdUnit> as input and returns a new vector only

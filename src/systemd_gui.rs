@@ -6,7 +6,7 @@ use gtk::traits::*;  // Enables the usage of GTK traits
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
 
-    let unit_files = systemd_dbus::list_unit_files();
+    let unit_files = systemd_dbus::list_unit_files(systemd_dbus::SortMethod::Name);
     let container = gtk::ScrolledWindow::new(None, None).unwrap();
     generate_services(&container, &unit_files);
 
