@@ -2,6 +2,7 @@ extern crate pango;  // Allows manipulating font styles
 use systemd_dbus;    // The dbus-based backend for systemd
 use gtk;
 use gtk::traits::*;  // Enables the usage of GTK traits
+use gdk::enums::key;
 
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
@@ -15,6 +16,15 @@ pub fn launch() {
 
     window.add(&container);
     window.show_all();
+
+    // Define action on key press
+    window.connect_key_press_event(move |_, key| {
+        match key.keyval as i32 {
+            key::Escape => gtk::main_quit(),
+            _ => ()
+        }
+        gtk::signal::Inhibit(false)
+    });
 
     gtk::main();
 }
