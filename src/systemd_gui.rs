@@ -1,7 +1,23 @@
-extern crate gtk;    // Enable the creation of GTK windows and widgets
 extern crate pango;  // Allows manipulating font styles
 use systemd_dbus;    // The dbus-based backend for systemd
+use gtk;
 use gtk::traits::*;  // Enables the usage of GTK traits
+
+pub fn launch() {
+    gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
+
+    let unit_files = systemd_dbus::list_unit_files();
+    let container = gtk::ScrolledWindow::new(None, None).unwrap();
+    generate_services(&container, &unit_files);
+
+    let window = gtk::Window::new(gtk::WindowType::Toplevel).unwrap();
+    configure_main_window(&window);
+
+    window.add(&container);
+    window.show_all();
+
+    gtk::main();
+}
 
 // create_list_widget! creates the widgets for each section
 macro_rules! create_list_widget {
@@ -34,24 +50,20 @@ macro_rules! rm_directory_path {
     }}
 }
 
-// create_main_window() creates the main window for this program.
-pub fn create_main_window() -> gtk::Window {
-    let window = gtk::Window::new(gtk::WindowType::Toplevel).unwrap();
+/// Configures all of the options for the main window
+fn configure_main_window(window: &gtk::Window) {
     window.set_title("System Services");
     window.set_default_size(500,500);
-
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
         gtk::signal::Inhibit(true)
     });
-
-    return window;
 }
 
 // generate_services() creates a gtk::ScrolledWindow widget containing the list of units available
 // on the system. Each individual unit is created by get_unit_widget() and added to their respective
 // gtk::Box.
-pub fn generate_services() -> gtk::ScrolledWindow {
+fn generate_services(container: &gtk::ScrolledWindow, unit_files: &Vec<systemd_dbus::SystemdUnit>) {
     let mut label_font = pango::FontDescription::new();
     label_font.set_weight(pango::Weight::Heavy);
 
@@ -59,18 +71,24 @@ pub fn generate_services() -> gtk::ScrolledWindow {
     let socket_list = create_list_widget!("Sockets (Activate On Use)", label_font, false);
     let timer_list = create_list_widget!("Timers (Activate Periodically)", label_font, false);
 
-    {
-        let unit_files = systemd_dbus::list_unit_files();
-        collect_units!(collect_togglable_services, service_list, unit_files.clone());
-        collect_units!(collect_togglable_sockets, socket_list, unit_files.clone());
-        collect_units!(collect_togglable_timers, timer_list, unit_files.clone());
-    }
+    collect_units!(collect_togglable_services, service_list, unit_files.clone());
+    collect_units!(collect_togglable_sockets, socket_list, unit_files.clone());
+    collect_units!(collect_togglable_timers, timer_list, unit_files.clone());
 
     service_list.add(&socket_list);
     service_list.add(&timer_list);
-    let scrolled_window = gtk::ScrolledWindow::new(None, None).unwrap();
-    scrolled_window.add(&service_list);
-    return scrolled_window;
+    container.add(&service_list);
+}
+
+// Removes the directory path and extension from the unit name
+fn get_unit_name(x: &str) -> String {
+    let mut output = rm_directory_path!(x);
+    let mut last_occurrence: usize = 0;
+    for (index, value) in output.chars().enumerate() {
+        if value == '.' { last_occurrence = index; }
+    }
+    output.truncate(last_occurrence);
+    return output
 }
 
 // get_unit_widget() takes a SystemdUnit and generates a gtk::Box widget from that information.
@@ -102,17 +120,6 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     let stop_button = gtk::Button::new_with_label("Stop").unwrap(); {
         let unit = rm_directory_path!(unit.name.clone());
         stop_button.connect_clicked(move |_| { systemd_dbus::stop(&unit); });
-    }
-
-    // Removes the directory path and extension from the unit name
-    fn get_unit_name(x: &str) -> String {
-        let mut output = rm_directory_path!(x);
-        let mut last_occurrence: usize = 0;
-        for (index, value) in output.chars().enumerate() {
-            if value == '.' { last_occurrence = index; }
-        }
-        output.truncate(last_occurrence);
-        return output
     }
 
     let mut label_font = pango::FontDescription::new();
