@@ -113,7 +113,8 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
         let service = unit.name.clone();
         switch.connect_clicked(move |switch| {
             if &switch.get_label().unwrap() == "Disable" {
-                if systemd_dbus::disable(&service) { switch.set_label(" Enable"); }
+                let filename = rm_directory_path!(&service); // Fix Systemd Bug
+                if systemd_dbus::disable(&filename) { switch.set_label(" Enable"); }
             } else {
                 if systemd_dbus::enable(&service) { switch.set_label("Disable"); }
             }
