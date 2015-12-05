@@ -66,6 +66,7 @@ impl UnitState {
     }
 }
 
+#[allow(dead_code)]
 pub enum SortMethod { Name, StateDisabled, StateEnabled }
 
 // list_unit_files() communicates with dbus to obtain a list of unit files and returns them as a
@@ -79,7 +80,7 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
             output.truncate(len);
             output
         };
-    
+
         // This custom loop iterates across two variables at a time. The first variable contains the
         // pathname of the unit, while the second variable contains the state of that unit.
         let mut systemd_units: Vec<SystemdUnit> = Vec::new();
@@ -197,4 +198,3 @@ pub fn stop(unit: &str) {
         Err(_) => println!("{} failed to stop", unit),
     }
 }
-
