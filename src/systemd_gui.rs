@@ -1,17 +1,17 @@
 extern crate pango;  // Allows manipulating font styles
 use systemd_dbus;    // The dbus-based backend for systemd
 use gtk;
-use gtk::traits::*;  // Enables the usage of GTK traits
+use gtk::prelude::*;
 use gdk::enums::key;
 
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
 
     let unit_files = systemd_dbus::list_unit_files(systemd_dbus::SortMethod::Name);
-    let container = gtk::ScrolledWindow::new(None, None).unwrap();
+    let container = gtk::ScrolledWindow::new(None, None);
     generate_services(&container, &unit_files);
 
-    let window = gtk::Window::new(gtk::WindowType::Toplevel).unwrap();
+    let window = gtk::Window::new(gtk::WindowType::Toplevel);
     configure_main_window(&window);
 
     window.add(&container);
@@ -19,11 +19,11 @@ pub fn launch() {
 
     // Define action on key press
     window.connect_key_press_event(move |_, key| {
-        match key.keyval as i32 {
+        match key.get_keyval() {
             key::Escape => gtk::main_quit(),
             _ => ()
         }
-        gtk::signal::Inhibit(false)
+        gtk::Inhibit(false)
     });
 
     gtk::main();
@@ -32,9 +32,9 @@ pub fn launch() {
 // create_list_widget! creates the widgets for each section
 macro_rules! create_list_widget {
     ($label:expr, $label_font:expr, $top:expr) => {{
-        let list = gtk::Box::new(gtk::Orientation::Vertical, 0).unwrap();
-        if !$top { list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap()); }
-        let label = gtk::Label::new($label).unwrap();
+        let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        if !$top { list.add(&gtk::Separator::new(gtk::Orientation::Horizontal)); }
+        let label = gtk::Label::new(Some($label));
         label.override_font(&$label_font);
         list.pack_start(&label, true, true, 0);
         list
@@ -45,7 +45,7 @@ macro_rules! create_list_widget {
 macro_rules! collect_units {
     ($filter_function:ident, $list:expr, $units:expr) => {
         for unit in systemd_dbus::$filter_function($units) {
-            $list.add(&gtk::Separator::new(gtk::Orientation::Horizontal).unwrap());
+            $list.add(&gtk::Separator::new(gtk::Orientation::Horizontal));
             $list.pack_start(&get_unit_widget(unit), false, false, 3);
         }
     }
@@ -66,7 +66,7 @@ fn configure_main_window(window: &gtk::Window) {
     window.set_default_size(500,500);
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
-        gtk::signal::Inhibit(true)
+        gtk::Inhibit(true)
     });
 }
 
@@ -78,8 +78,8 @@ fn generate_services(container: &gtk::ScrolledWindow, unit_files: &Vec<systemd_d
     label_font.set_weight(pango::Weight::Heavy);
 
     let service_list = create_list_widget!("Services (Activate on Startup)", label_font, true);
-    let socket_list = create_list_widget!("Sockets (Activate On Use)", label_font, false);
-    let timer_list = create_list_widget!("Timers (Activate Periodically)", label_font, false);
+    let socket_list  = create_list_widget!("Sockets (Activate On Use)", label_font, false);
+    let timer_list   = create_list_widget!("Timers (Activate Periodically)", label_font, false);
 
     collect_units!(collect_togglable_services, service_list, unit_files.clone());
     collect_units!(collect_togglable_sockets, socket_list, unit_files.clone());
@@ -104,8 +104,8 @@ fn get_unit_name(x: &str) -> String {
 // get_unit_widget() takes a SystemdUnit and generates a gtk::Box widget from that information.
 fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     let switch = match unit.state {
-        systemd_dbus::UnitState::Disabled => gtk::Button::new_with_label(" Enable").unwrap(),
-        systemd_dbus::UnitState::Enabled  => gtk::Button::new_with_label("Disable").unwrap(),
+        systemd_dbus::UnitState::Disabled => gtk::Button::new_with_label(" Enable"),
+        systemd_dbus::UnitState::Enabled  => gtk::Button::new_with_label("Disable"),
         _ => unreachable!(), // This program currently only collects units that fit the above.
     };
 
@@ -122,29 +122,29 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     }
 
     // Start Button
-    let start_button = gtk::Button::new_with_label("Start").unwrap(); {
+    let start_button = gtk::Button::new_with_label("Start"); {
         let unit = rm_directory_path!(unit.name.clone());
         start_button.connect_clicked(move |_| { systemd_dbus::start(&unit); });
     }
-    
+
     // Stop Button
-    let stop_button = gtk::Button::new_with_label("Stop").unwrap(); {
+    let stop_button = gtk::Button::new_with_label("Stop"); {
         let unit = rm_directory_path!(unit.name.clone());
         stop_button.connect_clicked(move |_| { systemd_dbus::stop(&unit); });
     }
 
     let mut label_font = pango::FontDescription::new();
     label_font.set_weight(pango::Weight::Heavy);
-    let label = gtk::Label::new(&get_unit_name(&unit.name)).unwrap();
+    let label = gtk::Label::new(Some(&get_unit_name(&unit.name)));
     label.override_font(&label_font);
-    
-    let button_box = gtk::Box::new(gtk::Orientation::Horizontal, 0).unwrap();
+
+    let button_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     button_box.pack_start(&switch, false, false, 1);
     button_box.pack_start(&start_button, false, false, 1);
     button_box.pack_start(&stop_button, false, false, 1);
     button_box.set_halign(gtk::Align::End);
 
-    let layout = gtk::Box::new(gtk::Orientation::Horizontal, 0).unwrap();
+    let layout = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     layout.pack_start(&label, false, false, 5);
     layout.pack_start(&button_box, true, true, 15);
 
