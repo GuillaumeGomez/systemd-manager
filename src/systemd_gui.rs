@@ -75,7 +75,7 @@ fn configure_main_window(window: &gtk::Window) {
 // gtk::Box.
 fn generate_services(container: &gtk::ScrolledWindow, unit_files: &Vec<systemd_dbus::SystemdUnit>) {
     let mut label_font = pango::FontDescription::new();
-    label_font.set_weight(pango::Weight::Heavy);
+    label_font.set_weight(pango::Weight::Medium);
 
     let service_list = create_list_widget!("Services (Activate on Startup)", label_font, true);
     let socket_list  = create_list_widget!("Sockets (Activate On Use)", label_font, false);
@@ -134,7 +134,7 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     }
 
     let mut label_font = pango::FontDescription::new();
-    label_font.set_weight(pango::Weight::Heavy);
+    label_font.set_weight(pango::Weight::Medium);
     let label = gtk::Label::new(Some(&get_unit_name(&unit.name)));
     label.override_font(&label_font);
 
