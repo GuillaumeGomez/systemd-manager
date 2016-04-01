@@ -8,11 +8,9 @@ This application exists to allow the user to manage their systemd services via a
 
 ## Install Instructions
 
-Simply install Rust and Cargo. You may need some GTK development packages. Fedora and Ubuntu users are 
-welcome to chime in on what packages are required to compile on their respective platforms.
+Simply install Rust via [multirust](https://github.com/brson/multirust) and execute the *install.sh* script. For Ubuntu users, this will automatically install libgtk-3-dev, generate a `systemd-manager` Debian package and automatically install it. For everyone else, it will simply install directly to the /usr prefix.
 
 ```sh
-sudo -v
 ./install.sh
 ```
 

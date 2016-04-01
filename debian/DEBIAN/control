@@ -1,0 +1,9 @@
+Package: systemd-manager
+Version: 0.3.3
+Section: admin
+Priority: optional
+Maintainer: Michael Aaron Murphy <mmstickman@gmail.com>
+Architecture: amd64
+Depends: libgtk-3-0
+Description: A GUI systemd service manager written entirely in Rust with GTK-rs.
+Installed-Size: 872
