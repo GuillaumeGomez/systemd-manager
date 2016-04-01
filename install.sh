@@ -1,7 +1,6 @@
 #!/bin/sh
 cargo build --release
-distro_name=$(cat /etc/os-release | head -1 | awk -F\" '{print $2}')
-if [ $distro_name = "Ubuntu" ]; then
+if [ "$(cat /etc/os-release | grep Ubuntu)" ]; then
     sudo apt install libgtk-3-dev
     version=$(cat Cargo.toml | grep version | awk -F\" '{print $2}')
     if [ "$(getconf LONG_BIT)" = "64" ]; then arch=amd64; else arch=i386; fi
