@@ -10,7 +10,7 @@ if [ "$(cat /etc/os-release | grep Ubuntu)" ]; then
     cp target/release/systemd-manager debian/usr/bin
     cp assets/systemd-manager-pkexec debian/usr/bin/
     cp assets/systemd-manager.desktop debian/usr/share/applications/
-    cp assets/org.freedesktop.policykit.systemd-manager.policy debian/usr/share/polkit-1
+    cp assets/org.freedesktop.policykit.systemd-manager.policy debian/usr/share/polkit-1/actions
     dpkg-deb --build debian systemd-manager_${version}_${arch}.deb
     sudo dpkg -i systemd-manager_${version}_${arch}.deb
 else
