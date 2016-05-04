@@ -1,7 +1,7 @@
 extern crate dbus;
 use std::path::Path;
 
-// dbus_message takes a systemd dbus function as input and returns the result as a dbus::Message.
+/// Takes a systemd dbus function as input and returns the result as a `dbus::Message`.
 macro_rules! dbus_message {
     ($function:expr) => {{
         dbus::Message::new_method_call("org.freedesktop.systemd1",
@@ -10,7 +10,7 @@ macro_rules! dbus_message {
     }}
 }
 
-// dbus_connect takes a dbus::Message as input and makes a connection to dbus, returning the reply
+/// Takes a `dbus::Message` as input and makes a connection to dbus, returning the reply.
 macro_rules! dbus_connect {
     ($message:expr) => {
         dbus::Connection::get_private(dbus::BusType::System).unwrap().
@@ -28,7 +28,7 @@ pub struct SystemdUnit {
 #[derive(Clone, PartialEq, Eq)]
 pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer }
 impl UnitType {
-    // Takes the pathname of the unit as input to determine what type of unit it is.
+    /// Takes the pathname of the unit as input to determine what type of unit it is.
     pub fn new(pathname: &str) -> UnitType {
         match Path::new(pathname).extension().unwrap().to_str().unwrap() {
             "automount" => UnitType::Automount,
@@ -49,8 +49,8 @@ impl UnitType {
 #[derive(Clone, PartialEq, Eq)]
 pub enum UnitState { Bad, Disabled, Enabled, Indirect, Linked, Masked, Static }
 impl UnitState {
-    // Takes the string containing the state information from the dbus message and converts it
-    // into a UnitType by matching the first character.
+    /// Takes the string containing the state information from the dbus message and converts it
+    /// into a UnitType by matching the first character.
     pub fn new(x: &str) -> UnitState {
         let x_as_chars: Vec<char> = x.chars().skip(6).take_while(|x| *x != '\"').collect();
         match x_as_chars[0] {
@@ -69,10 +69,9 @@ impl UnitState {
 #[allow(dead_code)]
 pub enum SortMethod { Name, StateDisabled, StateEnabled }
 
-// list_unit_files() communicates with dbus to obtain a list of unit files and returns them as a
-// vector of SystemdUnits.
+/// Communicates with dbus to obtain a list of unit files and returns them as a `Vec<SystemdUnit>`.
 pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
-    // parse_message takes the dbus message as input and maps the information to a Vec<SystemdUnit>
+    /// Takes the dbus message as input and maps the information to a `Vec<SystemdUnit>`.
     fn parse_message(input: &str, sort_method: SortMethod) -> Vec<SystemdUnit> {
         let message = {
             let mut output: String = input.chars().skip(7).collect();
@@ -114,29 +113,29 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
     parse_message(&format!("{:?}", message), sort_method)
 }
 
-// collect_togglable_services takes a Vec<SystemdUnit> as input and returns a new vector only
-// containing services which can be enabled and disabled.
+/// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing services which can be enabled and
+/// disabled.
 pub fn collect_togglable_services(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Service && (x.state == UnitState::Enabled ||
         x.state == UnitState::Disabled) && !x.name.contains("/etc/")).cloned().collect()
 }
 
-// collect_togglable_sockets takes a Vec<SystemdUnit> as input and returns a new vector only
-// containing sockets which can be enabled and disabled.
+/// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing sockets which can be enabled and
+/// disabled.
 pub fn collect_togglable_sockets(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Socket && (x.state == UnitState::Enabled ||
         x.state == UnitState::Disabled)).cloned().collect()
 }
 
-// collect_togglable_timers takes a Vec<SystemdUnit> as input and returns a new vector only
-// containing timers which can be enabled and disabled.
+/// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing timers which can be enabled and
+/// disabled.
 pub fn collect_togglable_timers(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Timer && (x.state == UnitState::Enabled ||
         x.state == UnitState::Disabled)).cloned().collect()
 }
 
-// enable takes the unit pathname of a service and enables it via dbus.
-// If dbus replies with `[Bool(true), Array([], "(sss)")]`, the service is already enabled.
+/// Takes the unit pathname of a service and enables it via dbus.
+/// If dbus replies with `[Bool(true), Array([], "(sss)")]`, the service is already enabled.
 pub fn enable(unit: &str) -> Option<String> {
     let mut message = dbus_message!("EnableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into(), true.into()]);
@@ -157,8 +156,8 @@ pub fn enable(unit: &str) -> Option<String> {
     }
 }
 
-// disable takes the unit pathname as input and disables it via dbus.
-// If dbus replies with `[Array([], "(sss)")]`, the service is already disabled.
+/// Takes the unit pathname as input and disables it via dbus.
+/// If dbus replies with `[Array([], "(sss)")]`, the service is already disabled.
 pub fn disable(unit: &str) -> Option<String> {
     let mut message = dbus_message!("DisableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into()]);
@@ -179,7 +178,7 @@ pub fn disable(unit: &str) -> Option<String> {
     }
 }
 
-// start takes a unit name as input and attempts to start it
+/// Takes a unit name as input and attempts to start it
 pub fn start(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StartUnit");
     message.append_items(&[unit.into(), "fail".into()]);
@@ -197,7 +196,7 @@ pub fn start(unit: &str) -> Option<String> {
     }
 }
 
-// stop takes a unit name as input and attempts to stop it.
+/// Takes a unit name as input and attempts to stop it.
 pub fn stop(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StopUnit");
     message.append_items(&[unit.into(), "fail".into()]);
