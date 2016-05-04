@@ -19,10 +19,7 @@ pub fn launch() {
 
     // Define action on key press
     window.connect_key_press_event(move |_, key| {
-        match key.get_keyval() {
-            key::Escape => gtk::main_quit(),
-            _ => ()
-        }
+        if let key::Escape = key.get_keyval() { gtk::main_quit(); }
         gtk::Inhibit(false)
     });
 
@@ -73,7 +70,7 @@ fn configure_main_window(window: &gtk::Window) {
 // generate_services() creates a gtk::ScrolledWindow widget containing the list of units available
 // on the system. Each individual unit is created by get_unit_widget() and added to their respective
 // gtk::Box.
-fn generate_services(container: &gtk::ScrolledWindow, unit_files: &Vec<systemd_dbus::SystemdUnit>) {
+fn generate_services(container: &gtk::ScrolledWindow, unit_files: &[systemd_dbus::SystemdUnit]) {
     let mut label_font = pango::FontDescription::new();
     label_font.set_weight(pango::Weight::Medium);
 
@@ -98,7 +95,7 @@ fn get_unit_name(x: &str) -> String {
         if value == '.' { last_occurrence = index; }
     }
     output.truncate(last_occurrence);
-    return output
+    output
 }
 
 // get_unit_widget() takes a SystemdUnit and generates a gtk::Box widget from that information.
@@ -112,11 +109,17 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     { // Defines action when clicking on the {en/dis}able toggle switch.
         let service = unit.name.clone();
         switch.connect_clicked(move |switch| {
+            let filename = rm_directory_path!(&service);
             if &switch.get_label().unwrap() == "Disable" {
-                let filename = rm_directory_path!(&service); // Fix Systemd Bug
-                if systemd_dbus::disable(&filename) { switch.set_label(" Enable"); }
+                match systemd_dbus::disable(&filename) {
+                    Some(error) => print_dialog(&error),
+                    None => switch.set_label(" Enable")
+                }
             } else {
-                if systemd_dbus::enable(&service) { switch.set_label("Disable"); }
+                match systemd_dbus::enable(&filename) {
+                    Some(error) => print_dialog(&error),
+                    None => switch.set_label("Disable")
+                }
             }
         });
     }
@@ -124,13 +127,21 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     // Start Button
     let start_button = gtk::Button::new_with_label("Start"); {
         let unit = rm_directory_path!(unit.name.clone());
-        start_button.connect_clicked(move |_| { systemd_dbus::start(&unit); });
+        start_button.connect_clicked(move |_| {
+            if let Some(error) = systemd_dbus::start(&unit) {
+                print_dialog(&error);
+            }
+        });
     }
 
     // Stop Button
     let stop_button = gtk::Button::new_with_label("Stop"); {
         let unit = rm_directory_path!(unit.name.clone());
-        stop_button.connect_clicked(move |_| { systemd_dbus::stop(&unit); });
+        stop_button.connect_clicked(move |_| {
+            if let Some(error) = systemd_dbus::stop(&unit) {
+                print_dialog(&error);
+            }
+        });
     }
 
     let mut label_font = pango::FontDescription::new();
@@ -148,5 +159,17 @@ fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
     layout.pack_start(&label, false, false, 5);
     layout.pack_start(&button_box, true, true, 15);
 
-    return layout;
+    layout
+}
+
+fn print_dialog(message: &str) {
+    let dialog = gtk::Dialog::new();
+    dialog.set_title("Systemd Error");
+    let content = dialog.get_content_area();
+    let text = gtk::TextView::new();
+    text.get_buffer().unwrap().set_text(message);
+    text.set_left_margin(5);
+    text.set_right_margin(5);
+    content.add(&text);
+    dialog.show_all();
 }

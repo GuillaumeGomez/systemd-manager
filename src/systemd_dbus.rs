@@ -84,11 +84,9 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
         // This custom loop iterates across two variables at a time. The first variable contains the
         // pathname of the unit, while the second variable contains the state of that unit.
         let mut systemd_units: Vec<SystemdUnit> = Vec::new();
-        let mut iterator = message.split(','); loop {
-            let name: String = match iterator.next() {
-                Some(x) => x.chars().skip(14).take_while(|x| *x != '\"').collect(),
-                None => break,
-            };
+        let mut iterator = message.split(',');
+        while let Some(name) = iterator.next() {
+            let name: String = name.chars().skip(14).take_while(|x| *x != '\"').collect();
             let utype = UnitType::new(&name);
             let state = UnitState::new(iterator.next().unwrap());
             systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
@@ -109,7 +107,7 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
                 );
             }
         }
-        return systemd_units;
+        systemd_units
     }
 
     let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
@@ -118,28 +116,28 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
 
 // collect_togglable_services takes a Vec<SystemdUnit> as input and returns a new vector only
 // containing services which can be enabled and disabled.
-pub fn collect_togglable_services(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
-    units.into_iter().filter(|x| x.utype == UnitType::Service && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled) && !x.name.contains("/etc/")).collect()
+pub fn collect_togglable_services(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
+    units.iter().filter(|x| x.utype == UnitType::Service && (x.state == UnitState::Enabled ||
+        x.state == UnitState::Disabled) && !x.name.contains("/etc/")).cloned().collect()
 }
 
 // collect_togglable_sockets takes a Vec<SystemdUnit> as input and returns a new vector only
 // containing sockets which can be enabled and disabled.
-pub fn collect_togglable_sockets(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
-    units.into_iter().filter(|x| x.utype == UnitType::Socket && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).collect()
+pub fn collect_togglable_sockets(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
+    units.iter().filter(|x| x.utype == UnitType::Socket && (x.state == UnitState::Enabled ||
+        x.state == UnitState::Disabled)).cloned().collect()
 }
 
 // collect_togglable_timers takes a Vec<SystemdUnit> as input and returns a new vector only
 // containing timers which can be enabled and disabled.
-pub fn collect_togglable_timers(units: Vec<SystemdUnit>) -> Vec<SystemdUnit> {
-    units.into_iter().filter(|x| x.utype == UnitType::Timer && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).collect()
+pub fn collect_togglable_timers(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
+    units.iter().filter(|x| x.utype == UnitType::Timer && (x.state == UnitState::Enabled ||
+        x.state == UnitState::Disabled)).cloned().collect()
 }
 
 // enable takes the unit pathname of a service and enables it via dbus.
 // If dbus replies with `[Bool(true), Array([], "(sss)")]`, the service is already enabled.
-pub fn enable(unit: &str) -> bool {
+pub fn enable(unit: &str) -> Option<String> {
     let mut message = dbus_message!("EnableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into(), true.into()]);
     match dbus_connect!(message) {
@@ -149,18 +147,19 @@ pub fn enable(unit: &str) -> bool {
             } else {
                 println!("{} has been enabled", unit);
             }
-            return true;
+            None
         },
         Err(reply) => {
-            println!("Error enabling service: {:?}", reply);
-            return false;
-        },
+            let error = format!("Error enabling {}:\n\n{:?}", unit, reply);
+            println!("{}", error);
+            Some(error)
+        }
     }
 }
 
 // disable takes the unit pathname as input and disables it via dbus.
 // If dbus replies with `[Array([], "(sss)")]`, the service is already disabled.
-pub fn disable(unit: &str) -> bool {
+pub fn disable(unit: &str) -> Option<String> {
     let mut message = dbus_message!("DisableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into()]);
     match dbus_connect!(message) {
@@ -170,31 +169,47 @@ pub fn disable(unit: &str) -> bool {
             } else {
                 println!("{} has been disabled", unit);
             }
-            return true;
+            None
         },
         Err(reply) => {
-            println!("Error disabling service: {:?}", reply);
-            return false
-        },
+            let error = format!("Error disabling {}:\n\n{:?}", unit, reply);
+            println!("{}", error);
+            Some(error)
+        }
     }
 }
 
 // start takes a unit name as input and attempts to start it
-pub fn start(unit: &str) {
+pub fn start(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StartUnit");
     message.append_items(&[unit.into(), "fail".into()]);
     match dbus_connect!(message) {
-        Ok(_) => println!("{} successfully started", unit),
-        Err(_) => println!("{} failed to start", unit),
+        Ok(_) => {
+            println!("{} successfully started", unit);
+            None
+        },
+        Err(error) => {
+            let output = format!("{} failed to start:\n\n{:?}", unit, error);
+            println!("{}", output);
+            Some(output)
+        }
+
     }
 }
 
 // stop takes a unit name as input and attempts to stop it.
-pub fn stop(unit: &str) {
+pub fn stop(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StopUnit");
     message.append_items(&[unit.into(), "fail".into()]);
     match dbus_connect!(message) {
-        Ok(_) => println!("{} was successfully stopped", unit),
-        Err(_) => println!("{} failed to stop", unit),
+        Ok(_) => {
+            println!("{} successfully stopped", unit);
+            None
+        },
+        Err(error) => {
+            let output = format!("{} failed to stop:\n\n{:?}", unit, error);
+            println!("{}", output);
+            Some(output)
+        }
     }
 }

@@ -4,7 +4,7 @@ version = "0.3.3"
 authors = ["Michael Murphy <mmstickman@gmail.com>"]
 
 [dependencies]
-dbus = "0.2.1"
+dbus = "0.3.3"
 gtk = "0.0.7"
 gdk = "0.3.0"
 pango = "0.0.7"
