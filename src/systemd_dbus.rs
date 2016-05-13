@@ -4,8 +4,10 @@ use std::path::Path;
 /// Takes a systemd dbus function as input and returns the result as a `dbus::Message`.
 macro_rules! dbus_message {
     ($function:expr) => {{
-        dbus::Message::new_method_call("org.freedesktop.systemd1",
-            "/org/freedesktop/systemd1", "org.freedesktop.systemd1.Manager", $function).
+        let dest      = "org.freedesktop.systemd1";
+        let node      = "/org/freedesktop/systemd1";
+        let interface = "org.freedesktop.systemd1.Manager";
+        dbus::Message::new_method_call(dest, node, interface, $function).
             unwrap_or_else(|e| panic!("{}", e))
     }}
 }
@@ -66,13 +68,10 @@ impl UnitState {
     }
 }
 
-#[allow(dead_code)]
-pub enum SortMethod { Name, StateDisabled, StateEnabled }
-
 /// Communicates with dbus to obtain a list of unit files and returns them as a `Vec<SystemdUnit>`.
-pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
+pub fn list_unit_files() -> Vec<SystemdUnit> {
     /// Takes the dbus message as input and maps the information to a `Vec<SystemdUnit>`.
-    fn parse_message(input: &str, sort_method: SortMethod) -> Vec<SystemdUnit> {
+    fn parse_message(input: &str) -> Vec<SystemdUnit> {
         let message = {
             let mut output: String = input.chars().skip(7).collect();
             let len = output.len()-10;
@@ -91,26 +90,20 @@ pub fn list_unit_files(sort_method: SortMethod) -> Vec<SystemdUnit> {
             systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
         }
 
-        match sort_method {
-            SortMethod::Name => systemd_units.sort_by(|a, b| a.name.cmp(&b.name)),
-            SortMethod::StateEnabled => {
-                systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
-                systemd_units.sort_by(|a, b|
-                    (a.state == UnitState::Disabled).cmp(&(b.state == UnitState::Disabled))
-                );
-            },
-            SortMethod::StateDisabled => {
-                systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
-                systemd_units.sort_by(|a, b|
-                    (a.state == UnitState::Enabled).cmp(&(b.state == UnitState::Enabled))
-                );
-            }
-        }
+        systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
         systemd_units
     }
 
     let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
-    parse_message(&format!("{:?}", message), sort_method)
+    parse_message(&format!("{:?}", message))
+}
+
+/// Returns the current enablement status of the unit
+pub fn get_unit_file_state(path: &str) -> bool {
+    for unit in list_unit_files() {
+        if unit.name.as_str() == path { return unit.state == UnitState::Enabled; }
+    }
+    false
 }
 
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing services which can be enabled and
@@ -136,7 +129,7 @@ pub fn collect_togglable_timers(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
 
 /// Takes the unit pathname of a service and enables it via dbus.
 /// If dbus replies with `[Bool(true), Array([], "(sss)")]`, the service is already enabled.
-pub fn enable(unit: &str) -> Option<String> {
+pub fn enable_unit_files(unit: &str) -> Option<String> {
     let mut message = dbus_message!("EnableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into(), true.into()]);
     match dbus_connect!(message) {
@@ -149,7 +142,7 @@ pub fn enable(unit: &str) -> Option<String> {
             None
         },
         Err(reply) => {
-            let error = format!("Error enabling {}:\n\n{:?}", unit, reply);
+            let error = format!("Error enabling {}:\n{:?}", unit, reply);
             println!("{}", error);
             Some(error)
         }
@@ -158,7 +151,7 @@ pub fn enable(unit: &str) -> Option<String> {
 
 /// Takes the unit pathname as input and disables it via dbus.
 /// If dbus replies with `[Array([], "(sss)")]`, the service is already disabled.
-pub fn disable(unit: &str) -> Option<String> {
+pub fn disable_unit_files(unit: &str) -> Option<String> {
     let mut message = dbus_message!("DisableUnitFiles");
     message.append_items(&[[unit][..].into(), false.into()]);
     match dbus_connect!(message) {
@@ -171,7 +164,7 @@ pub fn disable(unit: &str) -> Option<String> {
             None
         },
         Err(reply) => {
-            let error = format!("Error disabling {}:\n\n{:?}", unit, reply);
+            let error = format!("Error disabling {}:\n{:?}", unit, reply);
             println!("{}", error);
             Some(error)
         }
@@ -179,7 +172,7 @@ pub fn disable(unit: &str) -> Option<String> {
 }
 
 /// Takes a unit name as input and attempts to start it
-pub fn start(unit: &str) -> Option<String> {
+pub fn start_unit(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StartUnit");
     message.append_items(&[unit.into(), "fail".into()]);
     match dbus_connect!(message) {
@@ -188,7 +181,7 @@ pub fn start(unit: &str) -> Option<String> {
             None
         },
         Err(error) => {
-            let output = format!("{} failed to start:\n\n{:?}", unit, error);
+            let output = format!("{} failed to start:\n{:?}", unit, error);
             println!("{}", output);
             Some(output)
         }
@@ -197,7 +190,7 @@ pub fn start(unit: &str) -> Option<String> {
 }
 
 /// Takes a unit name as input and attempts to stop it.
-pub fn stop(unit: &str) -> Option<String> {
+pub fn stop_unit(unit: &str) -> Option<String> {
     let mut message = dbus_message!("StopUnit");
     message.append_items(&[unit.into(), "fail".into()]);
     match dbus_connect!(message) {
@@ -206,7 +199,7 @@ pub fn stop(unit: &str) -> Option<String> {
             None
         },
         Err(error) => {
-            let output = format!("{} failed to stop:\n\n{:?}", unit, error);
+            let output = format!("{} failed to stop:\n{:?}", unit, error);
             println!("{}", output);
             Some(output)
         }

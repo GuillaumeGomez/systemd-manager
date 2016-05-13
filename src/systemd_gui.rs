@@ -3,203 +3,320 @@ use gtk;
 use gtk::prelude::*;
 use gdk::enums::key;
 
-/// Performs a loop over a list of units and creates a widget from each.
-macro_rules! collect_units {
-    ($filter_function:ident, $list:expr, $units:expr) => {
-        for unit in systemd_dbus::$filter_function($units) {
-            let unit_widget = get_unit_widget(unit);
-            let row = gtk::ListBoxRow::new();
-            row.add(&unit_widget);
-            row.set_selectable(false);
-            $list.insert(&row, -1);
-        }
-    }
-}
+use std::fs;
+use std::io::{Read, Write};
+use std::path::Path;
 
-/// Takes either a &str or String and returns a String with directory paths removed
-macro_rules! rm_directory_path {
-    ($input:expr) => {{
-        let temp = $input;
-        let mut split: Vec<&str> = temp.split('/').collect();
-        String::from(split.pop().unwrap())
-    }}
-}
-
-pub struct Tabs {
-    notebook: gtk::Notebook,
-    tabs:     Vec<gtk::Box>,
-}
-
-impl Default for Tabs {
-    fn default() -> Tabs {
-        Tabs {
-            notebook: gtk::Notebook::new(),
-            tabs: Vec::new(),
-        }
-    }
-}
-
-impl Tabs {
-    pub fn create_tab(&mut self, title: &str, widget: &gtk::Widget) -> Option<u32> {
-        let label = gtk::Label::new(Some(title));
-        let tab = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-
-        tab.pack_start(&label, true, true, 0);
-        tab.show_all();
-
-        let index = self.notebook.append_page(widget, Some(&tab));
-        self.tabs.push(tab);
-        Some(index)
-    }
-}
-
-/// Launches the GTK3 GUI
 pub fn launch() {
-    gtk::init().unwrap_or_else(|_| panic!("Failed to initialize GTK."));
+    gtk::init().unwrap_or_else(|_| panic!("tv-renamer: failed to initialize GTK."));
 
-    // A list of units available on the system
-    let unit_files = systemd_dbus::list_unit_files(systemd_dbus::SortMethod::Name);
+    let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
+    let window: gtk::Window               = builder.get_object("main_window").unwrap();
+    let notebook: gtk::Notebook           = builder.get_object("notebook").unwrap();
+    let services_list: gtk::ListBox       = builder.get_object("services_list").unwrap();
+    let sockets_list: gtk::ListBox        = builder.get_object("sockets_list").unwrap();
+    let timers_list: gtk::ListBox         = builder.get_object("timers_list").unwrap();
+    let refresh_units_button: gtk::Button = builder.get_object("refresh_units_button").unwrap();
+    let unit_info: gtk::TextView          = builder.get_object("unit_info").unwrap();
+    let ableness_button: gtk::Button      = builder.get_object("ableness_button").unwrap();
+    let start_button: gtk::Button         = builder.get_object("start_button").unwrap();
+    let stop_button: gtk::Button          = builder.get_object("stop_button").unwrap();
+    let save_unit_file: gtk::Button       = builder.get_object("save_unit_file").unwrap();
 
-    // Creates the list of unit files as GTK widgets
-    let services = gtk::ListBox::new();
-    let sockets = gtk::ListBox::new();
-    let timers = gtk::ListBox::new();
-    collect_units!(collect_togglable_services, services, &unit_files.clone());
-    collect_units!(collect_togglable_sockets, sockets, &unit_files.clone());
-    collect_units!(collect_togglable_timers, timers, &unit_files.clone());
+    let unit_files = systemd_dbus::list_unit_files();
 
-    // A structure for holding each of the tabs
-    let mut tabs = Tabs::default();
+    // NOTE: Services
+    let services = systemd_dbus::collect_togglable_services(&unit_files);
+    let mut services_icons = Vec::new();
+    for service in services.clone() {
+        let mut unit_row = gtk::ListBoxRow::new();
+        create_row(&mut unit_row, Path::new(service.name.as_str()), service.state, &mut services_icons);
+        services_list.insert(&unit_row, -1);
+    }
 
-    // Create the services tab
-    let services_scroll = gtk::ScrolledWindow::new(None, None);
-    let services_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    services_scroll.add(&services);
-    services_box.pack_start(&services_scroll, true, true, 0);
-    let services_container: gtk::Widget = services_box.upcast();
-    tabs.create_tab("Services", &services_container);
+    {
+        let services       = services.clone();
+        let services_list  = services_list.clone();
+        let unit_info      = unit_info.clone();
+        let ableness_button = ableness_button.clone();
+        services_list.connect_row_selected(move |_, row| {
+            let index = row.clone().unwrap().get_index();
+            let service = &services[index as usize];
+            let description = get_unit_info(service.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            if systemd_dbus::get_unit_file_state(service.name.as_str()) {
+                ableness_button.set_label("Disable");
+            } else {
+                ableness_button.set_label("Enable");
+            }
+        });
+    }
 
-    // Create the sockets tab
-    let sockets_scroll = gtk::ScrolledWindow::new(None, None);
-    let sockets_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    sockets_scroll.add(&sockets);
-    sockets_box.pack_start(&sockets_scroll, true, true, 0);
-    let sockets_container: gtk::Widget = sockets_box.upcast();
-    tabs.create_tab("Sockets", &sockets_container);
+    // NOTE: Sockets
+    let sockets = systemd_dbus::collect_togglable_sockets(&unit_files);
+    let mut sockets_icons = Vec::new();
+    for socket in sockets.clone() {
+        let mut unit_row = gtk::ListBoxRow::new();
+        create_row(&mut unit_row, Path::new(socket.name.as_str()), socket.state, &mut sockets_icons);
+        sockets_list.insert(&unit_row, -1);
+    }
 
-    // Create the timers tab
-    let timers_scroll = gtk::ScrolledWindow::new(None, None);
-    let timers_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    timers_scroll.add(&timers);
-    timers_box.pack_start(&timers_scroll, true, true, 0);
-    let timers_container: gtk::Widget = timers_box.upcast();
-    tabs.create_tab("Timers", &timers_container);
+    {
+        let sockets         = sockets.clone();
+        let sockets_list    = sockets_list.clone();
+        let unit_info       = unit_info.clone();
+        let ableness_button = ableness_button.clone();
+        sockets_list.connect_row_selected(move |_, row| {
+            let index = row.clone().unwrap().get_index();
+            let socket = &sockets[index as usize];
+            let description = get_unit_info(socket.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            if systemd_dbus::get_unit_file_state(socket.name.as_str()) {
+                ableness_button.set_label("Disable");
+            } else {
+                ableness_button.set_label("Enable");
+            }
+        });
+    }
 
-    // Add the tabs to a container
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    container.pack_start(&tabs.notebook, true, true, 0);
+    // NOTE: Timers
+    let timers = systemd_dbus::collect_togglable_timers(&unit_files);
+    let mut timers_icons = Vec::new();
+    for timer in timers.clone() {
+        let mut unit_row = gtk::ListBoxRow::new();
+        create_row(&mut unit_row, Path::new(timer.name.as_str()), timer.state, &mut timers_icons);
+        timers_list.insert(&unit_row, -1);
+    }
 
-    // Create the window and add the container to the window
-    let window = gtk::Window::new(gtk::WindowType::Toplevel);
-    window.set_title("System Services");
-    window.set_default_size(500,500);
-    window.add(&container);
+    {
+        let timers          = timers.clone();
+        let timers_list     = timers_list.clone();
+        let unit_info       = unit_info.clone();
+        let ableness_button = ableness_button.clone();
+        timers_list.connect_row_selected(move |_, row| {
+            let index = row.clone().unwrap().get_index();
+            let timer = &timers[index as usize];
+            let description = get_unit_info(timer.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            if systemd_dbus::get_unit_file_state(timer.name.as_str()) {
+                ableness_button.set_label("Disable");
+            } else {
+                ableness_button.set_label("Enable");
+            }
+        });
+    }
+
+    { // NOTE: Implement the {dis, en}able button
+    let services      = services.clone();
+    let services_list = services_list.clone();
+    let sockets       = sockets.clone();
+    let sockets_list  = sockets_list.clone();
+    let timers        = timers.clone();
+    let timers_list   = timers_list.clone();
+    let notebook      = notebook.clone();
+    ableness_button.connect_clicked(move |button| {
+        match notebook.get_current_page().unwrap() {
+            0 => {
+                let index   = services_list.get_selected_row().unwrap().get_index();
+                let service = &services[index as usize];
+                let service_path = Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap();
+                if button.get_label().unwrap().as_str() == "Enable" {
+                    if let None = systemd_dbus::enable_unit_files(service_path) {
+                        button.set_label("Disable");
+                    }
+                } else {
+                    if let None = systemd_dbus::disable_unit_files(service_path) {
+                        button.set_label("Enable");
+                    }
+                }
+            },
+            1 => {
+                let index   = sockets_list.get_selected_row().unwrap().get_index();
+                let socket  = &sockets[index as usize];
+                let socket_path = Path::new(socket.name.as_str()).file_name().unwrap().to_str().unwrap();
+                if button.get_label().unwrap().as_str() == "Enable" {
+                    if let None = systemd_dbus::enable_unit_files(socket_path) {
+                        button.set_label("Disable");
+                    }
+                } else {
+                    if let None = systemd_dbus::disable_unit_files(socket_path) {
+                        button.set_label("Enable");
+                    }
+                }
+            },
+            2 => {
+                let index   = timers_list.get_selected_row().unwrap().get_index();
+                let timer  = &timers[index as usize];
+                let timer_path = Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap();
+                if button.get_label().unwrap().as_str() == "Enable" {
+                    if let None = systemd_dbus::enable_unit_files(timer_path) {
+                        button.set_label("Disable");
+                    }
+                } else {
+                    if let None = systemd_dbus::disable_unit_files(timer_path) {
+                        button.set_label("Enable");
+                    }
+                }
+            },
+            _ => ()
+        }
+    });
+    }
+
+    { // NOTE: Implement the start button
+        let services       = services.clone();
+        let services_list  = services_list.clone();
+        let sockets        = sockets.clone();
+        let sockets_list   = sockets_list.clone();
+        let timers         = timers.clone();
+        let timers_list    = timers_list.clone();
+        let notebook       = notebook.clone();
+        let services_icons = services_icons.clone();
+        let sockets_icons  = sockets_icons.clone();
+        let timers_icons   = timers_icons.clone();
+        start_button.connect_clicked(move |_| {
+            match notebook.get_current_page().unwrap() {
+                0 => {
+                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let service = &services[index as usize];
+                    if let None = systemd_dbus::start_unit(Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&services_icons[index as usize], true);
+                    }
+                },
+                1 => {
+                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let socket  = &sockets[index as usize];
+                    if let None = systemd_dbus::start_unit(Path::new(socket.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&sockets_icons[index as usize], true);
+                    }
+                },
+                2 => {
+                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let timer  = &timers[index as usize];
+                    if let None = systemd_dbus::start_unit(Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&timers_icons[index as usize], true);
+                    }
+                },
+                _ => ()
+            }
+        });
+    }
+
+    { // NOTE: Implement the stop button
+        let services       = services.clone();
+        let services_list  = services_list.clone();
+        let sockets        = sockets.clone();
+        let sockets_list   = sockets_list.clone();
+        let timers         = timers.clone();
+        let timers_list    = timers_list.clone();
+        let notebook       = notebook.clone();
+        let services_icons = services_icons.clone();
+        let sockets_icons  = sockets_icons.clone();
+        let timers_icons   = timers_icons.clone();
+        stop_button.connect_clicked(move |_| {
+            match notebook.get_current_page().unwrap() {
+                0 => {
+                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let service = &services[index as usize];
+                    if let None = systemd_dbus::stop_unit(Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&services_icons[index as usize], false);
+                    }
+                },
+                1 => {
+                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let socket  = &sockets[index as usize];
+                    if let None = systemd_dbus::stop_unit(Path::new(socket.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&sockets_icons[index as usize], false);
+                    }
+                },
+                2 => {
+                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let timer   = &timers[index as usize];
+                    if let None = systemd_dbus::stop_unit(Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                        update_icon(&timers_icons[index as usize], false);
+                    }
+                },
+                _ => ()
+            }
+        });
+    }
+
+    { // NOTE: Save Button
+        let unit_info = unit_info.clone();
+        let services      = services.clone();
+        let services_list = services_list.clone();
+        let sockets       = sockets.clone();
+        let sockets_list  = sockets_list.clone();
+        let timers        = timers.clone();
+        let timers_list   = timers_list.clone();
+        let notebook      = notebook.clone();
+        save_unit_file.connect_clicked(move |_| {
+            let buffer = unit_info.get_buffer().unwrap();
+            let start  = buffer.get_start_iter();
+            let end    = buffer.get_end_iter();
+            let text   = buffer.get_text(&start, &end, true).unwrap();
+            let path = match notebook.get_current_page().unwrap() {
+                0 => &services[services_list.get_selected_row().unwrap().get_index() as usize].name,
+                1 => &sockets[sockets_list.get_selected_row().unwrap().get_index() as usize].name,
+                2 => &timers[timers_list.get_selected_row().unwrap().get_index() as usize].name,
+                _ => unreachable!()
+            };
+            match fs::OpenOptions::new().write(true).open(&path) {
+                Ok(mut file) => {
+                    if let Err(message) = file.write(text.as_bytes()) {
+                        println!("Unable to write to file: {:?}", message);
+                    }
+                },
+                Err(message) => println!("Unable to open file: {:?}", message)
+            }
+        });
+
+    }
+
     window.show_all();
+    refresh_units_button.hide(); // TODO: Hide until it is implemented
 
+    // Quit the program when the program has been exited
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
-        gtk::Inhibit(true)
+        Inhibit(false)
     });
 
-    // Define action on key press
+    // Define custom actions on keypress
     window.connect_key_press_event(move |_, key| {
-        if let key::Escape = key.get_keyval() { gtk::main_quit(); }
+        if let key::Escape = key.get_keyval() { gtk::main_quit() }
         gtk::Inhibit(false)
     });
 
     gtk::main();
 }
 
-/// Removes the directory path and extension from the unit name
-fn get_unit_name(x: &str) -> String {
-    let mut output = rm_directory_path!(x);
-    let mut last_occurrence: usize = 0;
-    for (index, value) in output.chars().enumerate() {
-        if value == '.' { last_occurrence = index; }
-    }
-    output.truncate(last_occurrence);
-    output
+/// Updates the status icon for the selected unit
+fn update_icon(icon: &gtk::Image, state: bool) {
+    if state { icon.set_from_stock("gtk-yes", 5); } else { icon.set_from_stock("gtk-no", 5); }
 }
 
-/// Takes a `SystemdUnit` and generates a `gtk::Box` widget from that information.
-fn get_unit_widget(unit: systemd_dbus::SystemdUnit) -> gtk::Box {
-    let switch = match unit.state {
-        systemd_dbus::UnitState::Disabled => gtk::Button::new_with_label(" Enable"),
-        systemd_dbus::UnitState::Enabled  => gtk::Button::new_with_label("Disable"),
-        _ => unreachable!(), // This program currently only collects units that fit the above.
+/// Create a `gtk::ListboxRow` and add it to the `gtk::ListBox`, and then add the `gtk::Image` to a vector so that we can later modify
+/// it when the state changes.
+fn create_row(row: &mut gtk::ListBoxRow, path: &Path, state: systemd_dbus::UnitState, state_icons: &mut Vec<gtk::Image>) {
+    let filename = path.file_stem().unwrap().to_str().unwrap();
+    let unit_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let unit_label = gtk::Label::new(Some(filename));
+    let image = if state == systemd_dbus::UnitState::Enabled {
+        gtk::Image::new_from_stock("gtk-yes", 5)
+    } else {
+        gtk::Image::new_from_stock("gtk-no", 5)
     };
-
-    { // Defines action when clicking on the {en/dis}able toggle switch.
-        let service = unit.name.clone();
-        switch.connect_clicked(move |switch| {
-            let filename = rm_directory_path!(&service);
-            if &switch.get_label().unwrap() == "Disable" {
-                match systemd_dbus::disable(&filename) {
-                    Some(error) => print_dialog(&error),
-                    None => switch.set_label(" Enable")
-                }
-            } else {
-                match systemd_dbus::enable(&filename) {
-                    Some(error) => print_dialog(&error),
-                    None => switch.set_label("Disable")
-                }
-            }
-        });
-    }
-
-    // Start Button
-    let start_button = gtk::Button::new_with_label("Start"); {
-        let unit = rm_directory_path!(unit.name.clone());
-        start_button.connect_clicked(move |_| {
-            if let Some(error) = systemd_dbus::start(&unit) {
-                print_dialog(&error);
-            }
-        });
-    }
-
-    // Stop Button
-    let stop_button = gtk::Button::new_with_label("Stop"); {
-        let unit = rm_directory_path!(unit.name.clone());
-        stop_button.connect_clicked(move |_| {
-            if let Some(error) = systemd_dbus::stop(&unit) {
-                print_dialog(&error);
-            }
-        });
-    }
-
-    let label = gtk::Label::new(Some(&get_unit_name(&unit.name)));
-    let button_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    button_box.pack_start(&switch, false, false, 1);
-    button_box.pack_start(&start_button, false, false, 1);
-    button_box.pack_start(&stop_button, false, false, 1);
-    button_box.set_halign(gtk::Align::End);
-
-    let layout = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    layout.pack_start(&label, false, false, 5);
-    layout.pack_start(&button_box, true, true, 15);
-
-    layout
+    unit_box.add(&unit_label);
+    unit_box.pack_end(&image, false, false, 5);
+    row.add(&unit_box);
+    state_icons.push(image);
 }
 
-/// Prints an error dialog with the included message.
-fn print_dialog(message: &str) {
-    let dialog = gtk::Dialog::new();
-    dialog.set_title("Systemd Error");
-    let content = dialog.get_content_area();
-    let text = gtk::TextView::new();
-    text.get_buffer().unwrap().set_text(message);
-    text.set_left_margin(5);
-    text.set_right_margin(5);
-    content.add(&text);
-    dialog.show_all();
+/// Read the unit file and return it's contents so that we can display it in the `gtk::TextView`.
+fn get_unit_info<P: AsRef<Path>>(path: P) -> String {
+    let mut file = fs::File::open(path).unwrap();
+    let mut output = String::new();
+    let _ = file.read_to_string(&mut output);
+    output
 }
