@@ -167,7 +167,7 @@ pub fn launch() {
             let description = get_unit_info(service.name.as_str());
             unit_info.get_buffer().unwrap().set_text(description.as_str());
             ablement_switch.set_active(systemd_dbus::get_unit_file_state(service.name.as_str()));
-            ablement_switch.set_state(true);
+            ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, service.name.as_str());
         });
     }

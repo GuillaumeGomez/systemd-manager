@@ -14,7 +14,15 @@ This application exists to allow the user to manage their systemd services via a
 
 ## Install Instructions
 
-Simply install Rust via [multirust](https://github.com/brson/multirust) and execute the _install.sh_ script. For Ubuntu users, this will automatically install libgtk-3-dev, generate a `systemd-manager` Debian package and automatically install it. For everyone else, it will simply install directly to the /usr prefix.
+### Arch Linux
+
+This is available in the AUR as a git package: [`systemd-manager-git`](https://aur.archlinux.org/packages/systemd-manager-git/).
+
+### Ubuntu & Everyone Else
+
+For Ubuntu users, this will automatically install libgtk-3-dev, generate a `systemd-manager` Debian package and automatically install it. For everyone else, it will simply install directly to the /usr prefix.
+
+Simply install Rust via [multirust](https://github.com/brson/multirust) or [rustup.rs](https://www.rustup.rs/) and execute the _install.sh_ script.
 
 ```sh
 ./install.sh

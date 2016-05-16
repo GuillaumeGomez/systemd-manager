@@ -1,7 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.20.0 -->
+<!-- Generated with glade 3.20.0 
+
+Copyright (C) 2016
+
+This file is part of Systemd Service Manager.
+
+Systemd Service Manager is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Systemd Service Manager is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Systemd Service Manager.  If not, see <http://www.gnu.org/licenses/>.
+
+Author: Michael Aaron Murphy <mmstickman@gmail.com>
+
+-->
 <interface>
   <requires lib="gtk+" version="3.16"/>
+  <!-- interface-license-type gplv3 -->
+  <!-- interface-name Systemd Service Manager -->
+  <!-- interface-description A GTK3-based Systemd Service Manager Written in Rust -->
+  <!-- interface-copyright 2016 -->
+  <!-- interface-authors Michael Aaron Murphy <mmstickman@gmail.com> -->
   <object class="GtkPopoverMenu" id="unit_menu_popover">
     <property name="can_focus">False</property>
     <child>
