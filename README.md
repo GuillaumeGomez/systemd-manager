@@ -2,11 +2,15 @@
 
 # Systemd Manager
 
-This application exists to allow the user to manage their systemd services via a GTK3 GUI. Not only are you able to make changes to the enablement and running status of each of the units, but you will also be able to view and modify their unit files.
+This application exists to allow the user to manage their systemd services via a GTK3 GUI. Not only are you able to make changes to the enablement and running status of each of the units, but you will also be able to view and modify their unit files, check the journal logs. In addition, systemd analyze support is available to display the time it takes for systemd to boot the system.
 
-## Screenshot
+## Screenshots
 
-![](screenshot.png)
+![Unit Files](screenshot-unit-file.png)
+
+![Unit Journal](screenshot-unit-journal.png)
+
+![Analyze](screenshot-analyze.png)
 
 ## Install Instructions
 
