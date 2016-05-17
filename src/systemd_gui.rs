@@ -85,6 +85,7 @@ fn get_unit_journal(unit_path: &str) -> String {
     log.lines().rev().map(|x| x.trim()).fold(String::with_capacity(log.len()), |acc, x| acc + "\n" + x)
 }
 
+// TODO: Fix clippy error and start using this everywhere
 fn get_filename<'a>(path: &'a str) -> &str {
     Path::new(path).file_name().unwrap().to_str().unwrap()
 }

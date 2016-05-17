@@ -1,6 +1,6 @@
 [package]
 name = "systemd-manager"
-version = "0.4.1"
+version = "0.4.2"
 license = "GPL-3.0"
 repository = "https://github.com/mmstick/systemd-manager"
 readme = "README.md"
