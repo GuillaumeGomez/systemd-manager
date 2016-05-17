@@ -145,22 +145,9 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
             <property name="can_focus">False</property>
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkStackSwitcher">
+              <object class="GtkNotebook" id="info_stack">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="stack">info_stack</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkStack" id="info_stack">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="transition_type">crossfade</property>
                 <child>
                   <object class="GtkBox" id="unit_file_stack">
                     <property name="visible">True</property>
@@ -204,8 +191,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     </child>
                   </object>
                   <packing>
-                    <property name="name">Unit File</property>
-                    <property name="title" translatable="yes">Unit File</property>
+                    <property name="tab-label" translatable="yes">Unit File</property>
                   </packing>
                 </child>
                 <child>
@@ -248,8 +234,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     </child>
                   </object>
                   <packing>
-                    <property name="name">Unit Journal</property>
-                    <property name="title" translatable="yes">Unit Journal</property>
+                    <property name="tab-label" translatable="yes">Unit Journal</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
@@ -326,8 +311,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     </child>
                   </object>
                   <packing>
-                    <property name="name">Analyze</property>
-                    <property name="title" translatable="yes">Analyze</property>
+                    <property name="tab-label" translatable="yes">Analyze</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
