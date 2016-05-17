@@ -85,8 +85,7 @@ fn get_unit_journal(unit_path: &str) -> String {
     log.lines().rev().map(|x| x.trim()).fold(String::with_capacity(log.len()), |acc, x| acc + "\n" + x)
 }
 
-// TODO: Fix clippy error and start using this everywhere
-fn get_filename<'a>(path: &'a str) -> &str {
+fn get_filename(path: &str) -> &str {
     Path::new(path).file_name().unwrap().to_str().unwrap()
 }
 
@@ -113,47 +112,91 @@ pub fn launch() {
     let refresh_log_button: gtk::Button   = builder.get_object("refresh_log_button").unwrap();
     let right_header: gtk::Label          = builder.get_object("header_service_label").unwrap();
 
+    // List of all unit files on the system
+    let unit_files = dbus::list_unit_files();
+    let services   = dbus::collect_togglable_services(&unit_files);
+    let sockets    = dbus::collect_togglable_sockets(&unit_files);
+    let timers     = dbus::collect_togglable_timers(&unit_files);
+
     { // NOTE: Services Menu Button
-        let label   = unit_menu_label.clone();
-        let stack   = unit_stack.clone();
-        let popover = unit_popover.clone();
+        let label           = unit_menu_label.clone();
+        let stack           = unit_stack.clone();
+        let popover         = unit_popover.clone();
+        let services        = services.clone();
+        let services_list   = services_list.clone();
+        let unit_info       = unit_info.clone();
+        let ablement_switch = ablement_switch.clone();
+        let unit_journal    = unit_journal.clone();
+        let header          = right_header.clone();
         services_button.connect_clicked(move |_| {
             stack.set_visible_child_name("Services");
             label.set_text("Services");
             popover.set_visible(false);
+            services_list.select_row(Some(&services_list.get_row_at_index(0).unwrap()));
+            let service = &services[0];
+            let description = get_unit_info(service.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
+            ablement_switch.set_state(ablement_switch.get_active());
+            update_journal(&unit_journal, service.name.as_str());
+            header.set_label(get_filename(service.name.as_str()));
         });
     }
 
     { // NOTE: Sockets Menu Button
-        let label = unit_menu_label.clone();
-        let stack = unit_stack.clone();
-        let popover = unit_popover.clone();
+        let label           = unit_menu_label.clone();
+        let stack           = unit_stack.clone();
+        let popover         = unit_popover.clone();
+        let sockets         = sockets.clone();
+        let sockets_list    = sockets_list.clone();
+        let unit_info       = unit_info.clone();
+        let ablement_switch = ablement_switch.clone();
+        let unit_journal    = unit_journal.clone();
+        let header          = right_header.clone();
         sockets_button.connect_clicked(move |_| {
             stack.set_visible_child_name("Sockets");
             label.set_text("Sockets");
             popover.set_visible(false);
+            sockets_list.select_row(Some(&sockets_list.get_row_at_index(0).unwrap()));
+            let socket = &sockets[0];
+            let description = get_unit_info(socket.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
+            ablement_switch.set_state(true);
+            update_journal(&unit_journal, socket.name.as_str());
+            header.set_label(get_filename(socket.name.as_str()));
         });
     }
 
     { // NOTE: Timers Menu Button
-        let label = unit_menu_label.clone();
-        let stack = unit_stack.clone();
-        let popover = unit_popover.clone();
+        let label           = unit_menu_label.clone();
+        let stack           = unit_stack.clone();
+        let popover         = unit_popover.clone();
+        let timers          = timers.clone();
+        let timers_list     = timers_list.clone();
+        let unit_info       = unit_info.clone();
+        let ablement_switch = ablement_switch.clone();
+        let unit_journal    = unit_journal.clone();
+        let header          = right_header.clone();
         timers_button.connect_clicked(move |_| {
             stack.set_visible_child_name("Timers");
             label.set_text("Timers");
             popover.set_visible(false);
+            timers_list.select_row(Some(&timers_list.get_row_at_index(0).unwrap()));
+            let timer = &timers[0];
+            let description = get_unit_info(timer.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
+            ablement_switch.set_state(true);
+            update_journal(&unit_journal, timer.name.as_str());
+            header.set_label(get_filename(timer.name.as_str()));
         });
     }
 
     // Setup the Analyze stack
     setup_systemd_analyze(&builder);
 
-    // List of all unit files on the system
-    let unit_files = dbus::list_unit_files();
-
     // NOTE: Services
-    let services = dbus::collect_togglable_services(&unit_files);
     let mut services_icons = Vec::new();
     for service in services.clone() {
         let mut unit_row = gtk::ListBoxRow::new();
@@ -181,7 +224,6 @@ pub fn launch() {
     }
 
     // NOTE: Sockets
-    let sockets = dbus::collect_togglable_sockets(&unit_files);
     let mut sockets_icons = Vec::new();
     for socket in sockets.clone() {
         let mut unit_row = gtk::ListBoxRow::new();
@@ -194,7 +236,7 @@ pub fn launch() {
         let sockets_list    = sockets_list.clone();
         let unit_info       = unit_info.clone();
         let ablement_switch = ablement_switch.clone();
-        let unit_journal = unit_journal.clone();
+        let unit_journal    = unit_journal.clone();
         let header          = right_header.clone();
         sockets_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
@@ -209,7 +251,6 @@ pub fn launch() {
     }
 
     // NOTE: Timers
-    let timers = dbus::collect_togglable_timers(&unit_files);
     let mut timers_icons = Vec::new();
     for timer in timers.clone() {
         let mut unit_row = gtk::ListBoxRow::new();
@@ -222,7 +263,7 @@ pub fn launch() {
         let timers_list     = timers_list.clone();
         let unit_info       = unit_info.clone();
         let ablement_switch = ablement_switch.clone();
-        let unit_journal = unit_journal.clone();
+        let unit_journal    = unit_journal.clone();
         let header          = right_header.clone();
         timers_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
@@ -247,7 +288,10 @@ pub fn launch() {
     ablement_switch.connect_state_set(move |switch, enabled| {
         match unit_stack.get_visible_child_name().unwrap().as_str() {
             "Services" => {
-                let index   = services_list.get_selected_row().unwrap().get_index();
+                let index   = match services_list.get_selected_row() {
+                    Some(row) => row.get_index(),
+                    None      => 0
+                };
                 let service = &services[index as usize];
                 let service_path = Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap();
                 if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
@@ -259,7 +303,10 @@ pub fn launch() {
                 }
             },
             "Sockets" => {
-                let index   = sockets_list.get_selected_row().unwrap().get_index();
+                let index   = match sockets_list.get_selected_row() {
+                    Some(row) => row.get_index(),
+                    None      => 0
+                };
                 let socket  = &sockets[index as usize];
                 let socket_path = get_filename(socket.name.as_str());
                 if enabled && !dbus::get_unit_file_state(socket.name.as_str()) {
@@ -271,7 +318,10 @@ pub fn launch() {
                 }
             },
             "Timers" => {
-                let index   = timers_list.get_selected_row().unwrap().get_index();
+                let index   = match timers_list.get_selected_row() {
+                    Some(row) => row.get_index(),
+                    None      => 0
+                };
                 let timer  = &timers[index as usize];
                 let timer_path = Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap();
                 if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
@@ -302,23 +352,32 @@ pub fn launch() {
         start_button.connect_clicked(move |_| {
             match unit_stack.get_visible_child_name().unwrap().as_str() {
                 "Services" => {
-                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let index   = match services_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let service = &services[index as usize];
-                    if let None = dbus::start_unit(Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::start_unit(get_filename(service.name.as_str())) {
                         update_icon(&services_icons[index as usize], true);
                     }
                 },
                 "Sockets" => {
-                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let index   = match sockets_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let socket  = &sockets[index as usize];
-                    if let None = dbus::start_unit(Path::new(socket.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::start_unit(get_filename(socket.name.as_str())) {
                         update_icon(&sockets_icons[index as usize], true);
                     }
                 },
                 "Timers" => {
-                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let index   = match timers_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let timer  = &timers[index as usize];
-                    if let None = dbus::start_unit(Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::start_unit(get_filename(timer.name.as_str())) {
                         update_icon(&timers_icons[index as usize], true);
                     }
                 },
@@ -341,23 +400,32 @@ pub fn launch() {
         stop_button.connect_clicked(move |_| {
             match unit_stack.get_visible_child_name().unwrap().as_str() {
                 "Services" => {
-                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let index   = match services_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let service = &services[index as usize];
-                    if let None = dbus::stop_unit(Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::stop_unit(get_filename(service.name.as_str())) {
                         update_icon(&services_icons[index as usize], false);
                     }
                 },
                 "Sockets" => {
-                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let index   = match sockets_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let socket  = &sockets[index as usize];
-                    if let None = dbus::stop_unit(Path::new(socket.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::stop_unit(get_filename(socket.name.as_str())) {
                         update_icon(&sockets_icons[index as usize], false);
                     }
                 },
                 "Timers" => {
-                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let index   = match timers_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let timer   = &timers[index as usize];
-                    if let None = dbus::stop_unit(Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap()) {
+                    if let None = dbus::stop_unit(get_filename(timer.name.as_str())) {
                         update_icon(&timers_icons[index as usize], false);
                     }
                 },
@@ -410,17 +478,26 @@ pub fn launch() {
         refresh_button.connect_clicked(move |_| {
             match unit_stack.get_visible_child_name().unwrap().as_str() {
                 "Services" => {
-                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let index   = match services_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let service = &services[index as usize];
                     update_journal(&unit_journal, service.name.as_str());
                 },
                 "Sockets" => {
-                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let index   = match sockets_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let socket = &sockets[index as usize];
                     update_journal(&unit_journal, socket.name.as_str());
                 },
                 "Timers" => {
-                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let index   = match timers_list.get_selected_row() {
+                        Some(row) => row.get_index(),
+                        None      => 0
+                    };
                     let timer = &timers[index as usize];
                     update_journal(&unit_journal, timer.name.as_str());
                 },
