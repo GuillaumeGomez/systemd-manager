@@ -34,7 +34,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
     <property name="default_height">600</property>
     <property name="icon_name">preferences-system</property>
     <child>
-      <object class="GtkBox">
+      <object class="GtkBox" id="main_box">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
@@ -154,7 +154,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkScrolledWindow">
+                      <object class="GtkScrolledWindow" id="scrolled_window">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
@@ -200,7 +200,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkScrolledWindow">
+                      <object class="GtkScrolledWindow" id="another_scrolled_window">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
@@ -244,11 +244,11 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkBox">
+                      <object class="GtkBox" id="some_box">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkLabel" id="some_label">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="label" translatable="yes">Total Time:</property>
@@ -288,7 +288,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkScrolledWindow">
+                      <object class="GtkScrolledWindow" id="scroll3">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="shadow_type">in</property>
@@ -298,7 +298,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                             <property name="can_focus">True</property>
                             <property name="rules_hint">True</property>
                             <child internal-child="selection">
-                              <object class="GtkTreeSelection"/>
+                              <object class="GtkTreeSelection" id="selection"/>
                             </child>
                           </object>
                         </child>
@@ -332,7 +332,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
       </object>
     </child>
     <child type="titlebar">
-      <object class="GtkBox">
+      <object class="GtkBox" id="box4">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
@@ -342,7 +342,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
             <property name="has_subtitle">False</property>
             <property name="spacing">0</property>
             <child>
-              <object class="GtkMenuButton">
+              <object class="GtkMenuButton" id="some_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -383,7 +383,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkLabel" id="label2">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="label" translatable="yes">Enabled:</property>
@@ -452,7 +452,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
       </object>
     </child>
   </object>
-  <object class="GtkSizeGroup">
+  <object class="GtkSizeGroup" id="size_group">
     <widgets>
       <widget name="left_pane"/>
       <widget name="left_bar"/>
