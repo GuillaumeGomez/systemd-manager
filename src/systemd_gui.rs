@@ -110,6 +110,7 @@ pub fn launch() {
     let timers_button: gtk::Button        = builder.get_object("timers_button").unwrap();
     let unit_journal: gtk::TextView       = builder.get_object("unit_journal_view").unwrap();
     let refresh_log_button: gtk::Button   = builder.get_object("refresh_log_button").unwrap();
+    let right_header: gtk::Label          = builder.get_object("header_service_label").unwrap();
 
     { // NOTE: Services Menu Button
         let label   = unit_menu_label.clone();
@@ -160,11 +161,12 @@ pub fn launch() {
     }
 
     {
-        let services       = services.clone();
-        let services_list  = services_list.clone();
-        let unit_info      = unit_info.clone();
+        let services        = services.clone();
+        let services_list   = services_list.clone();
+        let unit_info       = unit_info.clone();
         let ablement_switch = ablement_switch.clone();
-        let unit_journal = unit_journal.clone();
+        let unit_journal    = unit_journal.clone();
+        let header          = right_header.clone();
         services_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
             let service = &services[index as usize];
@@ -173,6 +175,7 @@ pub fn launch() {
             ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
             ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, service.name.as_str());
+            header.set_label(get_filename(service.name.as_str()));
         });
     }
 
@@ -191,6 +194,7 @@ pub fn launch() {
         let unit_info       = unit_info.clone();
         let ablement_switch = ablement_switch.clone();
         let unit_journal = unit_journal.clone();
+        let header          = right_header.clone();
         sockets_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
             let socket = &sockets[index as usize];
@@ -199,6 +203,7 @@ pub fn launch() {
             ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, socket.name.as_str());
+            header.set_label(get_filename(socket.name.as_str()));
         });
     }
 
@@ -217,6 +222,7 @@ pub fn launch() {
         let unit_info       = unit_info.clone();
         let ablement_switch = ablement_switch.clone();
         let unit_journal = unit_journal.clone();
+        let header          = right_header.clone();
         timers_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
             let timer = &timers[index as usize];
@@ -225,6 +231,7 @@ pub fn launch() {
             ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, timer.name.as_str());
+            header.set_label(get_filename(timer.name.as_str()));
         });
     }
 
