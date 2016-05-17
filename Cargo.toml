@@ -10,5 +10,5 @@ keywords = [ "gtk", "linux", "systemd" ]
 
 [dependencies]
 dbus = "0.3.3"
-gtk = { git = "https://github.com/gtk-rs/gtk.git", features = ["v3_12"] }
+gtk = { git = "https://github.com/gtk-rs/gtk.git", features = ["v3_16"] }
 gdk = { git = "https://github.com/gtk-rs/gdk.git" }
