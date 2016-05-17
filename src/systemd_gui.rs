@@ -26,7 +26,7 @@ fn create_row(row: &mut gtk::ListBoxRow, path: &Path, state: systemd_dbus::UnitS
         gtk::Image::new_from_stock("gtk-no", 4)
     };
     unit_box.add(&unit_label);
-    unit_box.pack_end(&image, false, false, 5);
+    unit_box.pack_end(&image, false, false, 15);
     row.add(&unit_box);
     state_icons.push(image);
 }
