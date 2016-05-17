@@ -9,8 +9,12 @@ pub struct Analyze {
 impl Analyze {
     /// Returns the results of `systemd-analyze blame`
     pub fn blame() -> Vec<Analyze> {
-        String::from_utf8(Command::new("systemd-analyze").arg("blame").output().unwrap().stdout).unwrap()
+        if let Ok(s) = Command::new("systemd-analyze").arg("blame").output() {
+            String::from_utf8(s.stdout).unwrap()
             .lines().rev().map(|x| parse_analyze(x)).collect::<Vec<Analyze>>()
+        } else {
+            vec!()
+        }
     }
 }
 

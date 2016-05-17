@@ -116,8 +116,12 @@ fn setup_systemd_analyze(builder: &gtk::Builder) {
     analyze_tree.set_model(Some(&analyze_store));
 
     let total_time_label: gtk::Label = builder.get_object("time_to_boot").unwrap();
-    let time = (units.iter().last().unwrap().time as f32) / 1000f32;
-    total_time_label.set_label(format!("{} seconds", time).as_str());
+    if let Some(l) = units.iter().last() {
+        let time = (l.time as f32) / 1000f32;
+        total_time_label.set_label(&format!("{} seconds", time));
+    } else {
+        total_time_label.set_label("0 second");
+    }
 }
 
 /// Updates the associated journal `TextView` with the contents of the unit's journal log.

@@ -32,18 +32,22 @@ pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Sock
 impl UnitType {
     /// Takes the pathname of the unit as input to determine what type of unit it is.
     pub fn new(pathname: &str) -> UnitType {
-        match Path::new(pathname).extension().unwrap().to_str().unwrap() {
-            "automount" => UnitType::Automount,
-            "busname" => UnitType::Busname,
-            "mount" => UnitType::Mount,
-            "path" => UnitType::Path,
-            "scope" => UnitType::Scope,
-            "service" => UnitType::Service,
-            "slice" => UnitType::Slice,
-            "socket" => UnitType::Socket,
-            "target" => UnitType::Target,
-            "timer" => UnitType::Timer,
-            _ => panic!("Unknown Type: {}", pathname),
+        if let Some(extension) = Path::new(pathname).extension() {
+            match extension.to_str().unwrap() {
+                "automount" => UnitType::Automount,
+                "busname" => UnitType::Busname,
+                "mount" => UnitType::Mount,
+                "path" => UnitType::Path,
+                "scope" => UnitType::Scope,
+                "service" => UnitType::Service,
+                "slice" => UnitType::Slice,
+                "socket" => UnitType::Socket,
+                "target" => UnitType::Target,
+                "timer" => UnitType::Timer,
+                _ => panic!("Unknown Type: {}", pathname),
+            }
+        } else {
+            UnitType::Timer
         }
     }
 }
@@ -74,9 +78,13 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
     fn parse_message(input: &str) -> Vec<SystemdUnit> {
         let message = {
             let mut output: String = input.chars().skip(7).collect();
-            let len = output.len()-10;
-            output.truncate(len);
-            output
+            if output.len() >= 10 {
+                let len = output.len()-10;
+                output.truncate(len);
+                output
+            } else {
+                String::new()
+            }
         };
 
         // This custom loop iterates across two variables at a time. The first variable contains the
@@ -86,15 +94,21 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
         while let Some(name) = iterator.next() {
             let name: String = name.chars().skip(14).take_while(|x| *x != '\"').collect();
             let utype = UnitType::new(&name);
-            let state = UnitState::new(iterator.next().unwrap());
-            systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
+            if let Some(i) = iterator.next() {
+                let state = UnitState::new(i);
+                systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
+            }
         }
 
         systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
         systemd_units
     }
 
-    let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
+    let message = if let Ok(m) = dbus_connect!(dbus_message!("ListUnitFiles")) {
+        m.get_items()
+    } else {
+        vec!()
+    };
     parse_message(&format!("{:?}", message))
 }
 
