@@ -91,7 +91,7 @@ fn get_filename<'a>(path: &'a str) -> &str {
 }
 
 pub fn launch() {
-    gtk::init().unwrap_or_else(|_| panic!("tv-renamer: failed to initialize GTK."));
+    gtk::init().unwrap_or_else(|_| panic!("systemd-manager: failed to initialize GTK."));
 
     let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
     let window: gtk::Window               = builder.get_object("main_window").unwrap();
