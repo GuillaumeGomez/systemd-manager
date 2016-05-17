@@ -29,6 +29,26 @@ macro_rules! with_gtk_3_16 {
     }
 }
 
+#[cfg(not(feature = "gtk_3_14"))]
+macro_rules! with_gtk_3_14 {
+    ($ex:expr) => (
+        ()
+    );
+    ($bl:block) => {
+        ()
+    }
+}
+
+#[cfg(feature = "gtk_3_14")]
+macro_rules! with_gtk_3_14 {
+    ($ex:expr) => (
+        $ex
+    );
+    ($bl:block) => {
+        $bl
+    }
+}
+
 /// Updates the status icon for the selected unit
 fn update_icon(icon: &gtk::Image, state: bool) {
     if state { icon.set_from_stock("gtk-yes", 4); } else { icon.set_from_stock("gtk-no", 4); }
@@ -206,7 +226,7 @@ pub fn launch() {
                 let description = get_unit_info(service.name.as_str());
                 unit_info.get_buffer().unwrap().set_text(description.as_str());
                 ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
-                ablement_switch.set_state(ablement_switch.get_active());
+                with_gtk_3_14! {{ ablement_switch.set_state(ablement_switch.get_active()); }}
                 update_journal(&unit_journal, service.name.as_str());
                 header.set_label(get_filename(service.name.as_str()));
             }
@@ -235,7 +255,7 @@ pub fn launch() {
             let description = get_unit_info(socket.name.as_str());
             unit_info.get_buffer().unwrap().set_text(description.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
-            ablement_switch.set_state(true);
+            with_gtk_3_14! {{ ablement_switch.set_state(true); }}
             update_journal(&unit_journal, socket.name.as_str());
             header.set_label(get_filename(socket.name.as_str()));
         });
@@ -263,12 +283,13 @@ pub fn launch() {
             let description = get_unit_info(timer.name.as_str());
             unit_info.get_buffer().unwrap().set_text(description.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
-            ablement_switch.set_state(true);
+            with_gtk_3_14! {{ ablement_switch.set_state(true); }}
             update_journal(&unit_journal, timer.name.as_str());
             header.set_label(get_filename(timer.name.as_str()));
         });
     }
 
+    with_gtk_3_14! {{
     { // NOTE: Implement the {dis, en}able button
     let services        = services.clone();
     let services_list   = services_list.clone();
@@ -277,49 +298,50 @@ pub fn launch() {
     let timers          = timers.clone();
     let timers_list     = timers_list.clone();
     let unit_stack      = unit_stack.clone();
-    ablement_switch.connect_state_set(move |switch, enabled| {
-        match unit_stack.get_visible_child_name().unwrap().as_str() {
-            "Services" => {
-                let index   = services_list.get_selected_row().unwrap().get_index();
-                let service = &services[index as usize];
-                let service_path = Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap();
-                if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
-                    dbus::enable_unit_files(service_path);
-                    switch.set_state(true);
-                } else if !enabled && dbus::get_unit_file_state(service.name.as_str()) {
-                    dbus::disable_unit_files(service_path);
-                    switch.set_state(false);
-                }
-            },
-            "Sockets" => {
-                let index   = sockets_list.get_selected_row().unwrap().get_index();
-                let socket  = &sockets[index as usize];
-                let socket_path = get_filename(socket.name.as_str());
-                if enabled && !dbus::get_unit_file_state(socket.name.as_str()) {
-                    dbus::enable_unit_files(socket_path);
-                    switch.set_state(true);
-                } else if !enabled && dbus::get_unit_file_state(socket.name.as_str()) {
-                    dbus::disable_unit_files(socket_path);
-                    switch.set_state(false);
-                }
-            },
-            "Timers" => {
-                let index   = timers_list.get_selected_row().unwrap().get_index();
-                let timer  = &timers[index as usize];
-                let timer_path = Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap();
-                if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
-                    dbus::enable_unit_files(timer_path);
-                    switch.set_state(true);
-                } else if !enabled && dbus::get_unit_file_state(timer.name.as_str()) {
-                    dbus::disable_unit_files(timer_path);
-                    switch.set_state(false);
-                }
-            },
-            _ => unreachable!()
-        }
-        gtk::Inhibit(true)
-    });
+        ablement_switch.connect_state_set(move |switch, enabled| {
+            match unit_stack.get_visible_child_name().unwrap().as_str() {
+                "Services" => {
+                    let index   = services_list.get_selected_row().unwrap().get_index();
+                    let service = &services[index as usize];
+                    let service_path = Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap();
+                    if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
+                        dbus::enable_unit_files(service_path);
+                        switch.set_state(true);
+                    } else if !enabled && dbus::get_unit_file_state(service.name.as_str()) {
+                        dbus::disable_unit_files(service_path);
+                        switch.set_state(false);
+                    }
+                },
+                "Sockets" => {
+                    let index   = sockets_list.get_selected_row().unwrap().get_index();
+                    let socket  = &sockets[index as usize];
+                    let socket_path = get_filename(socket.name.as_str());
+                    if enabled && !dbus::get_unit_file_state(socket.name.as_str()) {
+                        dbus::enable_unit_files(socket_path);
+                        switch.set_state(true);
+                    } else if !enabled && dbus::get_unit_file_state(socket.name.as_str()) {
+                        dbus::disable_unit_files(socket_path);
+                        switch.set_state(false);
+                    }
+                },
+                "Timers" => {
+                    let index   = timers_list.get_selected_row().unwrap().get_index();
+                    let timer  = &timers[index as usize];
+                    let timer_path = Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap();
+                    if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
+                        dbus::enable_unit_files(timer_path);
+                        switch.set_state(true);
+                    } else if !enabled && dbus::get_unit_file_state(timer.name.as_str()) {
+                        dbus::disable_unit_files(timer_path);
+                        switch.set_state(false);
+                    }
+                },
+                _ => unreachable!()
+            }
+            gtk::Inhibit(true)
+        });
     }
+    }}
 
     { // NOTE: Implement the start button
         let services       = services.clone();
