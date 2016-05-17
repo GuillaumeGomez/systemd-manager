@@ -219,6 +219,12 @@ pub fn launch() {
     let sockets    = dbus::collect_togglable_sockets(&unit_files);
     let timers     = dbus::collect_togglable_timers(&unit_files);
 
+    // List of all unit files on the system
+    let unit_files = dbus::list_unit_files();
+    let services   = dbus::collect_togglable_services(&unit_files);
+    let sockets    = dbus::collect_togglable_sockets(&unit_files);
+    let timers     = dbus::collect_togglable_timers(&unit_files);
+
     with_gtk_3_16! {{
         let right_bar: gtk::HeaderBar         = builder.get_object("right_bar").unwrap();
         right_bar.set_position(1);
