@@ -12,12 +12,12 @@ impl Analyze {
         fn parse_time(input: &str) -> u32 {
             if input.ends_with("ms") {
                 input[0..input.len()-2].parse::<u32>().unwrap_or(0)
+            } else if input.ends_with('s') {
+                (input[0..input.len()-1].parse::<f32>().unwrap_or(0f32) * 1000f32) as u32
             } else if input.ends_with("min") {
                 input[0..input.len()-3].parse::<u32>().unwrap_or(0) * 3600000
-
             } else {
-                let number = input[0..input.len()-1].parse::<f32>().unwrap_or(0f32);
-                (number * 1000f32) as u32
+                0u32
             }
         }
 
