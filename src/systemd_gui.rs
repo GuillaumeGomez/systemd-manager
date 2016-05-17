@@ -9,6 +9,26 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::process::Command;
 
+#[cfg(not(feature = "gtk_3_16"))]
+macro_rules! with_gtk_3_16 {
+    ($ex:expr) => (
+        ()
+    );
+    ($bl:block) => {
+        ()
+    }
+}
+
+#[cfg(feature = "gtk_3_16")]
+macro_rules! with_gtk_3_16 {
+    ($ex:expr) => (
+        $ex
+    );
+    ($bl:block) => {
+        $bl
+    }
+}
+
 /// Updates the status icon for the selected unit
 fn update_icon(icon: &gtk::Image, state: bool) {
     if state { icon.set_from_stock("gtk-yes", 4); } else { icon.set_from_stock("gtk-no", 4); }
@@ -97,9 +117,15 @@ fn get_filename(path: &str) -> &str {
     Path::new(path).file_name().unwrap().to_str().unwrap()
 }
 
+#[cfg(feature = "gtk_3_16")]
+const GLADE_FILE: &'static str = include_str!("interface.glade");
+#[cfg(not(feature = "gtk_3_16"))]
+const GLADE_FILE: &'static str = include_str!("interface_3_10.glade");
+
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("systemd-manager: failed to initialize GTK."));
 
+<<<<<<< HEAD
     let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
     let window: gtk::Window                    = builder.get_object("main_window").unwrap();
     let unit_stack: gtk::Stack                 = builder.get_object("unit_stack").unwrap();
@@ -170,90 +196,90 @@ pub fn launch() {
     let sockets    = dbus::collect_togglable_sockets(&unit_files);
     let timers     = dbus::collect_togglable_timers(&unit_files);
 
-    { // NOTE: Services Menu Button
-        let label           = unit_menu_label.clone();
-        let stack           = unit_stack.clone();
-        let popover         = unit_popover.clone();
-        let services        = services.clone();
-        let services_list   = services_list.clone();
-        let unit_info       = unit_info.clone();
-        let ablement_switch = ablement_switch.clone();
-        let unit_journal    = unit_journal.clone();
-        let header          = header_service_label.clone();
-        services_button.connect_clicked(move |_| {
-            stack.set_visible_child_name("Services");
-            label.set_text("Services");
-            popover.set_visible(false);
-            services_list.select_row(Some(&services_list.get_row_at_index(0).unwrap()));
-            let service = &services[0];
-            let info = get_unit_info(service.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(info.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
-            ablement_switch.set_state(ablement_switch.get_active());
-            update_journal(&unit_journal, service.name.as_str());
-            match get_unit_description(&info) {
-                Some(description) => header.set_label(description),
-                None              => header.set_label(get_filename(service.name.as_str()))
-            }
-        });
-    }
+    with_gtk_3_16! {{
+        let right_bar: gtk::HeaderBar         = builder.get_object("right_bar").unwrap();
+        right_bar.set_position(1);
 
-    { // NOTE: Sockets Menu Button
-        let label           = unit_menu_label.clone();
-        let stack           = unit_stack.clone();
-        let popover         = unit_popover.clone();
-        let sockets         = sockets.clone();
-        let sockets_list    = sockets_list.clone();
-        let unit_info       = unit_info.clone();
-        let ablement_switch = ablement_switch.clone();
-        let unit_journal    = unit_journal.clone();
-        let header          = header_service_label.clone();
-        sockets_button.connect_clicked(move |_| {
-            stack.set_visible_child_name("Sockets");
-            label.set_text("Sockets");
-            popover.set_visible(false);
-            sockets_list.select_row(Some(&sockets_list.get_row_at_index(0).unwrap()));
-            let socket = &sockets[0];
-            let info = get_unit_info(socket.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(info.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
-            ablement_switch.set_state(true);
-            update_journal(&unit_journal, socket.name.as_str());
-            match get_unit_description(&info) {
-                Some(description) => header.set_label(description),
-                None              => header.set_label(get_filename(socket.name.as_str()))
-            }
-        });
-    }
+        let unit_menu_label: gtk::Label       = builder.get_object("unit_menu_label").unwrap();
+        let unit_popover: gtk::PopoverMenu    = builder.get_object("unit_menu_popover").unwrap();
+        let services_button: gtk::Button      = builder.get_object("services_button").unwrap();
+        let sockets_button: gtk::Button       = builder.get_object("sockets_button").unwrap();
+        let timers_button: gtk::Button        = builder.get_object("timers_button").unwrap();
+        { // NOTE: Services Menu Button
+            let label           = unit_menu_label.clone();
+            let stack           = unit_stack.clone();
+            let popover         = unit_popover.clone();
+            let services        = services.clone();
+            let services_list   = services_list.clone();
+            let unit_info       = unit_info.clone();
+            let ablement_switch = ablement_switch.clone();
+            let unit_journal    = unit_journal.clone();
+            let header          = right_header.clone();
+            services_button.connect_clicked(move |_| {
+                stack.set_visible_child_name("Services");
+                label.set_text("Services");
+                popover.set_visible(false);
+                services_list.select_row(Some(&services_list.get_row_at_index(0).unwrap()));
+                let service = &services[0];
+                let description = get_unit_info(service.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
+                ablement_switch.set_state(ablement_switch.get_active());
+                update_journal(&unit_journal, service.name.as_str());
+                header.set_label(get_filename(service.name.as_str()));
+            });
+        }
 
-    { // NOTE: Timers Menu Button
-        let label           = unit_menu_label.clone();
-        let stack           = unit_stack.clone();
-        let popover         = unit_popover.clone();
-        let timers          = timers.clone();
-        let timers_list     = timers_list.clone();
-        let unit_info       = unit_info.clone();
-        let ablement_switch = ablement_switch.clone();
-        let unit_journal    = unit_journal.clone();
-        let header          = header_service_label.clone();
-        timers_button.connect_clicked(move |_| {
-            stack.set_visible_child_name("Timers");
-            label.set_text("Timers");
-            popover.set_visible(false);
-            timers_list.select_row(Some(&timers_list.get_row_at_index(0).unwrap()));
-            let timer = &timers[0];
-            let info = get_unit_info(timer.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(info.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
-            ablement_switch.set_state(true);
-            update_journal(&unit_journal, timer.name.as_str());
-            header.set_label(get_filename(timer.name.as_str()));
-            match get_unit_description(&info) {
-                Some(description) => header.set_label(description),
-                None              => header.set_label(get_filename(timer.name.as_str()))
-            }
-        });
-    }
+        { // NOTE: Sockets Menu Button
+            let label           = unit_menu_label.clone();
+            let stack           = unit_stack.clone();
+            let popover         = unit_popover.clone();
+            let sockets         = sockets.clone();
+            let sockets_list    = sockets_list.clone();
+            let unit_info       = unit_info.clone();
+            let ablement_switch = ablement_switch.clone();
+            let unit_journal    = unit_journal.clone();
+            let header          = right_header.clone();
+            sockets_button.connect_clicked(move |_| {
+                stack.set_visible_child_name("Sockets");
+                label.set_text("Sockets");
+                popover.set_visible(false);
+                sockets_list.select_row(Some(&sockets_list.get_row_at_index(0).unwrap()));
+                let socket = &sockets[0];
+                let description = get_unit_info(socket.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
+                ablement_switch.set_state(true);
+                update_journal(&unit_journal, socket.name.as_str());
+                header.set_label(get_filename(socket.name.as_str()));
+            });
+        }
+
+        { // NOTE: Timers Menu Button
+            let label           = unit_menu_label.clone();
+            let stack           = unit_stack.clone();
+            let popover         = unit_popover.clone();
+            let timers          = timers.clone();
+            let timers_list     = timers_list.clone();
+            let unit_info       = unit_info.clone();
+            let ablement_switch = ablement_switch.clone();
+            let unit_journal    = unit_journal.clone();
+            let header          = right_header.clone();
+            timers_button.connect_clicked(move |_| {
+                stack.set_visible_child_name("Timers");
+                label.set_text("Timers");
+                popover.set_visible(false);
+                timers_list.select_row(Some(&timers_list.get_row_at_index(0).unwrap()));
+                let timer = &timers[0];
+                let description = get_unit_info(timer.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
+                ablement_switch.set_state(true);
+                update_journal(&unit_journal, timer.name.as_str());
+                header.set_label(get_filename(timer.name.as_str()));
+            });
+        }
+    }}
 
     // Setup the Analyze stack
     setup_systemd_analyze(&builder);
@@ -270,21 +296,24 @@ pub fn launch() {
         let services        = services.clone();
         let services_list   = services_list.clone();
         let unit_info       = unit_info.clone();
+        with_gtk_3_16! {{ unit_info.set_monospace(true); }}
         let ablement_switch = ablement_switch.clone();
         let unit_journal    = unit_journal.clone();
         let header          = header_service_label.clone();
         services_list.connect_row_selected(move |_, row| {
-            let index = row.clone().unwrap().get_index();
-            let service = &services[index as usize];
-            let description = get_unit_info(service.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
-            ablement_switch.set_state(ablement_switch.get_active());
-            update_journal(&unit_journal, service.name.as_str());
-            header.set_label(get_filename(service.name.as_str()));
-            match get_unit_description(&description) {
-                Some(description) => header.set_label(description),
-                None              => header.set_label(get_filename(service.name.as_str()))
+            if let Some(row) = row.clone() {
+                let index = row.get_index();
+                let service = &services[index as usize];
+                let description = get_unit_info(service.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
+                ablement_switch.set_state(ablement_switch.get_active());
+                update_journal(&unit_journal, service.name.as_str());
+                header.set_label(get_filename(service.name.as_str()));
+                match get_unit_description(&description) {
+                    Some(description) => header.set_label(description),
+                    None              => header.set_label(get_filename(service.name.as_str()))
+                }
             }
         });
     }
