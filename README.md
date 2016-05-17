@@ -25,5 +25,6 @@ For Ubuntu users, this will automatically install libgtk-3-dev, generate a `syst
 Simply install Rust via [multirust](https://github.com/brson/multirust) or [rustup.rs](https://www.rustup.rs/) and execute the _install.sh_ script.
 
 ```sh
+curl https://sh.rustup.rs -sSf | sh
 ./install.sh
 ```
