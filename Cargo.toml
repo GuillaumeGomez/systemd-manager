@@ -12,3 +12,8 @@ keywords = [ "gtk", "linux", "systemd" ]
 dbus = "0.3.3"
 gtk = { git = "https://github.com/gtk-rs/gtk.git", features = ["v3_16"] }
 gdk = { git = "https://github.com/gtk-rs/gdk.git" }
+
+[features]
+gtk_3_14 = ["gtk/v3_14"]
+gtk_3_16 = ["gtk/v3_16"]
+default = ["gtk_3_16"]

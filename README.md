@@ -31,16 +31,14 @@ curl https://sh.rustup.rs -sSf | sh
 
 ### Older versions
 
-It is possible to run it on older GTK versions (3.10) but not all features will be available. To build it with GTK 3.10, you have to replace:
+It is possible to run it on older GTK versions (3.10) but not all features will be available. To build it with GTK 3.10, you have to do:
 
-```Toml
-gtk = { git = "https://github.com/gtk-rs/gtk.git", features = ["v3_16"] }
+```shell
+cargo run --no-default-features
 ```
 
-with:
+And to use Gtk 3.14:
 
-```Toml
-gtk = { git = "https://github.com/gtk-rs/gtk.git", features = ["v3_10"] }
+```shell
+cargo run --no-default-features --features gtk_3_14
 ```
-
-Then just build and run!

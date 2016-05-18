@@ -29,7 +29,7 @@ macro_rules! with_gtk_3_16 {
     }
 }
 
-#[cfg(not(feature = "gtk_3_14"))]
+#[cfg(not(all(feature = "gtk_3_14", feature = "gtk_3_16")))]
 macro_rules! with_gtk_3_14 {
     ($ex:expr) => (
         ()
@@ -39,7 +39,7 @@ macro_rules! with_gtk_3_14 {
     }
 }
 
-#[cfg(feature = "gtk_3_14")]
+#[cfg(any(feature = "gtk_3_14", feature = "gtk_3_16"))]
 macro_rules! with_gtk_3_14 {
     ($ex:expr) => (
         $ex
@@ -149,7 +149,7 @@ const GLADE_FILE: &'static str = include_str!("interface_3_10.glade");
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("systemd-manager: failed to initialize GTK."));
 
-    let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
+    let builder = gtk::Builder::new_from_string(GLADE_FILE);
     let window: gtk::Window                    = builder.get_object("main_window").unwrap();
     let unit_stack: gtk::Stack                 = builder.get_object("unit_stack").unwrap();
     let services_list: gtk::ListBox            = builder.get_object("services_list").unwrap();
@@ -175,7 +175,6 @@ pub fn launch() {
     let systemd_units: gtk::Button             = builder.get_object("systemd_units").unwrap();
     let systemd_analyze: gtk::Button           = builder.get_object("systemd_analyze").unwrap();
     let systemd_menu_popover: gtk::PopoverMenu = builder.get_object("systemd_menu_popover").unwrap();
-
 
     { // NOTE: Program the Systemd Analyze Button
         let systemd_analyze      = systemd_analyze.clone();
@@ -226,9 +225,6 @@ pub fn launch() {
     let timers     = dbus::collect_togglable_timers(&unit_files);
 
     with_gtk_3_16! {{
-        let right_bar: gtk::HeaderBar         = builder.get_object("right_bar").unwrap();
-        right_bar.set_position(1);
-
         let unit_menu_label: gtk::Label       = builder.get_object("unit_menu_label").unwrap();
         let unit_popover: gtk::PopoverMenu    = builder.get_object("unit_menu_popover").unwrap();
         let services_button: gtk::Button      = builder.get_object("services_button").unwrap();
