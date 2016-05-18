@@ -469,7 +469,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
             <property name="has_subtitle">False</property>
             <property name="spacing">0</property>
             <child>
-              <object class="GtkMenuButton">
+              <object class="GtkMenuButton" id="systemd_menu_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -484,7 +484,7 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
               </object>
             </child>
             <child>
-              <object class="GtkMenuButton">
+              <object class="GtkMenuButton" id="systemd_units_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>

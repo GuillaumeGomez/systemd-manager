@@ -93,43 +93,45 @@ pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("systemd-manager: failed to initialize GTK."));
 
     let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
-    let window: gtk::Window                 = builder.get_object("main_window").unwrap();
-    let unit_stack: gtk::Stack              = builder.get_object("unit_stack").unwrap();
-    let services_list: gtk::ListBox         = builder.get_object("services_list").unwrap();
-    let sockets_list: gtk::ListBox          = builder.get_object("sockets_list").unwrap();
-    let timers_list: gtk::ListBox           = builder.get_object("timers_list").unwrap();
-    let unit_info: gtk::TextView            = builder.get_object("unit_info").unwrap();
-    let ablement_switch: gtk::Switch        = builder.get_object("ablement_switch").unwrap();
-    let start_button: gtk::Button           = builder.get_object("start_button").unwrap();
-    let stop_button: gtk::Button            = builder.get_object("stop_button").unwrap();
-    let save_unit_file: gtk::Button         = builder.get_object("save_button").unwrap();
-    let unit_menu_label: gtk::Label         = builder.get_object("unit_menu_label").unwrap();
-    let unit_popover: gtk::PopoverMenu      = builder.get_object("unit_menu_popover").unwrap();
-    let services_button: gtk::Button        = builder.get_object("services_button").unwrap();
-    let sockets_button: gtk::Button         = builder.get_object("sockets_button").unwrap();
-    let timers_button: gtk::Button          = builder.get_object("timers_button").unwrap();
-    let unit_journal: gtk::TextView         = builder.get_object("unit_journal_view").unwrap();
-    let refresh_log_button: gtk::Button     = builder.get_object("refresh_log_button").unwrap();
-    let header_service_label: gtk::Label    = builder.get_object("header_service_label").unwrap();
-    let action_buttons: gtk::Box            = builder.get_object("action_buttons").unwrap();
-    let systemd_menu_label: gtk::Label      = builder.get_object("systemd_menu_label").unwrap();
-    let main_window_stack: gtk::Stack       = builder.get_object("main_window_stack").unwrap();
-    let systemd_units_button: gtk::Button   = builder.get_object("systemd_units").unwrap();
-    let systemd_analyze_button: gtk::Button = builder.get_object("systemd_analyze").unwrap();
+    let window: gtk::Window                    = builder.get_object("main_window").unwrap();
+    let unit_stack: gtk::Stack                 = builder.get_object("unit_stack").unwrap();
+    let services_list: gtk::ListBox            = builder.get_object("services_list").unwrap();
+    let sockets_list: gtk::ListBox             = builder.get_object("sockets_list").unwrap();
+    let timers_list: gtk::ListBox              = builder.get_object("timers_list").unwrap();
+    let unit_info: gtk::TextView               = builder.get_object("unit_info").unwrap();
+    let ablement_switch: gtk::Switch           = builder.get_object("ablement_switch").unwrap();
+    let start_button: gtk::Button              = builder.get_object("start_button").unwrap();
+    let stop_button: gtk::Button               = builder.get_object("stop_button").unwrap();
+    let save_unit_file: gtk::Button            = builder.get_object("save_button").unwrap();
+    let unit_menu_label: gtk::Label            = builder.get_object("unit_menu_label").unwrap();
+    let unit_popover: gtk::PopoverMenu         = builder.get_object("unit_menu_popover").unwrap();
+    let services_button: gtk::Button           = builder.get_object("services_button").unwrap();
+    let sockets_button: gtk::Button            = builder.get_object("sockets_button").unwrap();
+    let timers_button: gtk::Button             = builder.get_object("timers_button").unwrap();
+    let unit_journal: gtk::TextView            = builder.get_object("unit_journal_view").unwrap();
+    let refresh_log_button: gtk::Button        = builder.get_object("refresh_log_button").unwrap();
+    let header_service_label: gtk::Label       = builder.get_object("header_service_label").unwrap();
+    let action_buttons: gtk::Box               = builder.get_object("action_buttons").unwrap();
+    let systemd_menu_label: gtk::Label         = builder.get_object("systemd_menu_label").unwrap();
+    let systemd_units_button: gtk::MenuButton  = builder.get_object("systemd_units_button").unwrap();
+    let main_window_stack: gtk::Stack          = builder.get_object("main_window_stack").unwrap();
+    let systemd_units: gtk::Button             = builder.get_object("systemd_units").unwrap();
+    let systemd_analyze: gtk::Button           = builder.get_object("systemd_analyze").unwrap();
     let systemd_menu_popover: gtk::PopoverMenu = builder.get_object("systemd_menu_popover").unwrap();
 
+
     { // NOTE: Program the Systemd Analyze Button
-        let systemd_analyze_button = systemd_analyze_button.clone();
-        let main_window_stack = main_window_stack.clone();
-        let systemd_menu_label = systemd_menu_label.clone();
-        let unit_menu_label = unit_menu_label.clone();
+        let systemd_analyze      = systemd_analyze.clone();
+        let main_window_stack    = main_window_stack.clone();
+        let systemd_menu_label   = systemd_menu_label.clone();
         let header_service_label = header_service_label.clone();
-        let action_buttons = action_buttons.clone();
-        let popover = systemd_menu_popover.clone();
-        systemd_analyze_button.connect_clicked(move |_| {
+        let action_buttons       = action_buttons.clone();
+        let systemd_units_button = systemd_units_button.clone();
+        let popover              = systemd_menu_popover.clone();
+        systemd_analyze.connect_clicked(move |_| {
             main_window_stack.set_visible_child_name("Systemd Analyze");
             systemd_menu_label.set_label("Systemd Analyze");
-            unit_menu_label.set_visible(false);
+            systemd_units_button.set_visible(false);
             header_service_label.set_visible(false);
             action_buttons.set_visible(false);
             popover.set_visible(false);
@@ -138,16 +140,16 @@ pub fn launch() {
 
     { // NOTE: Program the Systemd Unit Button
         let systemd_units_button = systemd_units_button.clone();
-        let main_window_stack = main_window_stack.clone();
-        let systemd_menu_label = systemd_menu_label.clone();
-        let unit_menu_label = unit_menu_label.clone();
+        let main_window_stack    = main_window_stack.clone();
+        let systemd_menu_label   = systemd_menu_label.clone();
         let header_service_label = header_service_label.clone();
-        let action_buttons = action_buttons.clone();
-        let popover = systemd_menu_popover.clone();
-        systemd_units_button.connect_clicked(move |_| {
+        let action_buttons       = action_buttons.clone();
+        let systemd_units_button = systemd_units_button.clone();
+        let popover              = systemd_menu_popover.clone();
+        systemd_units.connect_clicked(move |_| {
             main_window_stack.set_visible_child_name("Systemd Units");
             systemd_menu_label.set_label("Systemd Units");
-            unit_menu_label.set_visible(true);
+            systemd_units_button.set_visible(true);
             header_service_label.set_visible(true);
             action_buttons.set_visible(true);
             popover.set_visible(false);
