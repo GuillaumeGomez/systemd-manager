@@ -39,6 +39,14 @@ fn get_unit_info<P: AsRef<Path>>(path: P) -> String {
     output
 }
 
+/// Obtain the description from the unit file and return it.
+fn get_unit_description(info: &str) -> Option<&str> {
+    match info.lines().find(|x| x.starts_with("Description=")) {
+        Some(description) => Some(description.split_at(12).1),
+        None => None
+    }
+}
+
 /// Use `systemd-analyze blame` to fill out the information for the Analyze `gtk::Stack`.
 fn setup_systemd_analyze(builder: &gtk::Builder) {
     let analyze_tree: gtk::TreeView = builder.get_object("analyze_tree").unwrap();
@@ -178,12 +186,15 @@ pub fn launch() {
             popover.set_visible(false);
             services_list.select_row(Some(&services_list.get_row_at_index(0).unwrap()));
             let service = &services[0];
-            let description = get_unit_info(service.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            let info = get_unit_info(service.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(info.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
             ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, service.name.as_str());
-            header.set_label(get_filename(service.name.as_str()));
+            match get_unit_description(&info) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(service.name.as_str()))
+            }
         });
     }
 
@@ -203,12 +214,15 @@ pub fn launch() {
             popover.set_visible(false);
             sockets_list.select_row(Some(&sockets_list.get_row_at_index(0).unwrap()));
             let socket = &sockets[0];
-            let description = get_unit_info(socket.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            let info = get_unit_info(socket.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(info.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, socket.name.as_str());
-            header.set_label(get_filename(socket.name.as_str()));
+            match get_unit_description(&info) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(socket.name.as_str()))
+            }
         });
     }
 
@@ -228,12 +242,16 @@ pub fn launch() {
             popover.set_visible(false);
             timers_list.select_row(Some(&timers_list.get_row_at_index(0).unwrap()));
             let timer = &timers[0];
-            let description = get_unit_info(timer.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            let info = get_unit_info(timer.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(info.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, timer.name.as_str());
             header.set_label(get_filename(timer.name.as_str()));
+            match get_unit_description(&info) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(timer.name.as_str()))
+            }
         });
     }
 
@@ -264,6 +282,10 @@ pub fn launch() {
             ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, service.name.as_str());
             header.set_label(get_filename(service.name.as_str()));
+            match get_unit_description(&description) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(service.name.as_str()))
+            }
         });
     }
 
@@ -285,12 +307,16 @@ pub fn launch() {
         sockets_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
             let socket = &sockets[index as usize];
-            let description = get_unit_info(socket.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            let info = get_unit_info(socket.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(info.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, socket.name.as_str());
             header.set_label(get_filename(socket.name.as_str()));
+            match get_unit_description(&info) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(socket.name.as_str()))
+            }
         });
     }
 
@@ -312,12 +338,16 @@ pub fn launch() {
         timers_list.connect_row_selected(move |_, row| {
             let index = row.clone().unwrap().get_index();
             let timer = &timers[index as usize];
-            let description = get_unit_info(timer.name.as_str());
-            unit_info.get_buffer().unwrap().set_text(description.as_str());
+            let info = get_unit_info(timer.name.as_str());
+            unit_info.get_buffer().unwrap().set_text(info.as_str());
             ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, timer.name.as_str());
             header.set_label(get_filename(timer.name.as_str()));
+            match get_unit_description(&info) {
+                Some(description) => header.set_label(description),
+                None              => header.set_label(get_filename(timer.name.as_str()))
+            }
         });
     }
 
