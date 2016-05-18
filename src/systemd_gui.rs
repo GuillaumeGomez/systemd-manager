@@ -9,6 +9,26 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::process::Command;
 
+#[cfg(not(feature = "gtk_3_16"))]
+macro_rules! with_gtk_3_16 {
+    ($e:expr) => (
+        ()
+    );
+    ($bl:block) => {
+        ()
+    }
+}
+
+#[cfg(feature = "gtk_3_16")]
+macro_rules! with_gtk_3_16 {
+    ($e:expr) => (
+        $e
+    );
+    ($bl:block) => {
+        $bl
+    }
+}
+
 /// Updates the status icon for the selected unit
 fn update_icon(icon: &gtk::Image, state: bool) {
     if state { icon.set_from_stock("gtk-yes", 4); } else { icon.set_from_stock("gtk-no", 4); }
@@ -97,10 +117,15 @@ fn get_filename(path: &str) -> &str {
     Path::new(path).file_name().unwrap().to_str().unwrap()
 }
 
+#[cfg(feature = "gtk_3_16")]
+const GLADE_FILE: &'static str = include_str!("interface.glade");
+#[cfg(not(feature = "gtk_3_16"))]
+const GLADE_FILE: &'static str = include_str!("interface_3_10.glade");
+
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("systemd-manager: failed to initialize GTK."));
 
-    let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
+    let builder = gtk::Builder::new_from_string(GLADE_FILE);
     let window: gtk::Window                    = builder.get_object("main_window").unwrap();
     let unit_stack: gtk::Stack                 = builder.get_object("unit_stack").unwrap();
     let services_list: gtk::ListBox            = builder.get_object("services_list").unwrap();

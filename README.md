@@ -28,3 +28,17 @@ Simply install Rust via [multirust](https://github.com/brson/multirust) or [rust
 curl https://sh.rustup.rs -sSf | sh
 ./install.sh
 ```
+
+### Older versions
+
+It is possible to run it on older GTK versions (3.10/3.14) but not all features will be available. To build it with GTK 3.10, you have to do:
+
+```shell
+cargo run --no-default-features
+```
+
+And to build with GTK 3.14:
+
+```shell
+cargo run --no-default-features --features gtk_3_14
+```
