@@ -239,19 +239,22 @@ pub fn launch() {
             let unit_info       = unit_info.clone();
             let ablement_switch = ablement_switch.clone();
             let unit_journal    = unit_journal.clone();
-            let header          = right_header.clone();
+            let header          = header_service_label.clone();
             services_button.connect_clicked(move |_| {
                 stack.set_visible_child_name("Services");
                 label.set_text("Services");
                 popover.set_visible(false);
                 services_list.select_row(Some(&services_list.get_row_at_index(0).unwrap()));
                 let service = &services[0];
-                let description = get_unit_info(service.name.as_str());
-                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                let info = get_unit_info(service.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(info.as_str());
                 ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
                 ablement_switch.set_state(ablement_switch.get_active());
                 update_journal(&unit_journal, service.name.as_str());
-                header.set_label(get_filename(service.name.as_str()));
+                match get_unit_description(&info) {
+                    Some(description) => header.set_label(description),
+                    None              => header.set_label(get_filename(service.name.as_str()))
+                }
             });
         }
 
@@ -264,19 +267,22 @@ pub fn launch() {
             let unit_info       = unit_info.clone();
             let ablement_switch = ablement_switch.clone();
             let unit_journal    = unit_journal.clone();
-            let header          = right_header.clone();
+            let header          = header_service_label.clone();
             sockets_button.connect_clicked(move |_| {
                 stack.set_visible_child_name("Sockets");
                 label.set_text("Sockets");
                 popover.set_visible(false);
                 sockets_list.select_row(Some(&sockets_list.get_row_at_index(0).unwrap()));
                 let socket = &sockets[0];
-                let description = get_unit_info(socket.name.as_str());
-                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                let info = get_unit_info(socket.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(info.as_str());
                 ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
                 ablement_switch.set_state(true);
                 update_journal(&unit_journal, socket.name.as_str());
-                header.set_label(get_filename(socket.name.as_str()));
+                match get_unit_description(&info) {
+                    Some(description) => header.set_label(description),
+                    None              => header.set_label(get_filename(socket.name.as_str()))
+                }
             });
         }
 
@@ -289,19 +295,23 @@ pub fn launch() {
             let unit_info       = unit_info.clone();
             let ablement_switch = ablement_switch.clone();
             let unit_journal    = unit_journal.clone();
-            let header          = right_header.clone();
+            let header          = header_service_label.clone();
             timers_button.connect_clicked(move |_| {
                 stack.set_visible_child_name("Timers");
                 label.set_text("Timers");
                 popover.set_visible(false);
                 timers_list.select_row(Some(&timers_list.get_row_at_index(0).unwrap()));
                 let timer = &timers[0];
-                let description = get_unit_info(timer.name.as_str());
-                unit_info.get_buffer().unwrap().set_text(description.as_str());
+                let info = get_unit_info(timer.name.as_str());
+                unit_info.get_buffer().unwrap().set_text(info.as_str());
                 ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
                 ablement_switch.set_state(true);
                 update_journal(&unit_journal, timer.name.as_str());
                 header.set_label(get_filename(timer.name.as_str()));
+                match get_unit_description(&info) {
+                    Some(description) => header.set_label(description),
+                    None              => header.set_label(get_filename(timer.name.as_str()))
+                }
             });
         }
     }}
