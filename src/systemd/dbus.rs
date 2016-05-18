@@ -20,14 +20,14 @@ macro_rules! dbus_connect {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SystemdUnit {
     pub name: String,
     pub state: UnitState,
     pub utype: UnitType,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer }
 impl UnitType {
     /// Takes the pathname of the unit as input to determine what type of unit it is.
@@ -48,7 +48,7 @@ impl UnitType {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UnitState { Bad, Disabled, Enabled, Indirect, Linked, Masked, Static }
 impl UnitState {
     /// Takes the string containing the state information from the dbus message and converts it
@@ -110,21 +110,21 @@ pub fn get_unit_file_state(path: &str) -> bool {
 /// disabled.
 pub fn collect_togglable_services(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Service && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled) && !x.name.contains("/etc/")).cloned().collect()
+        x.state == UnitState::Disabled) && !x.name.starts_with("/etc/") && !x.name.ends_with("@.service")).cloned().collect()
 }
 
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing sockets which can be enabled and
 /// disabled.
 pub fn collect_togglable_sockets(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Socket && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).cloned().collect()
+        x.state == UnitState::Disabled) && !x.name.ends_with("@.socket")).cloned().collect()
 }
 
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing timers which can be enabled and
 /// disabled.
 pub fn collect_togglable_timers(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
     units.iter().filter(|x| x.utype == UnitType::Timer && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).cloned().collect()
+        x.state == UnitState::Disabled) && !x.name.ends_with("@.timer")).cloned().collect()
 }
 
 /// Takes the unit pathname of a service and enables it via dbus.

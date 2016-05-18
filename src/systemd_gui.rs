@@ -293,7 +293,7 @@ pub fn launch() {
                     None      => 0
                 };
                 let service = &services[index as usize];
-                let service_path = Path::new(service.name.as_str()).file_name().unwrap().to_str().unwrap();
+                let service_path = get_filename(service.name.as_str());
                 if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
                     dbus::enable_unit_files(service_path);
                     switch.set_state(true);
@@ -323,7 +323,7 @@ pub fn launch() {
                     None      => 0
                 };
                 let timer  = &timers[index as usize];
-                let timer_path = Path::new(timer.name.as_str()).file_name().unwrap().to_str().unwrap();
+                let timer_path = get_filename(timer.name.as_str());
                 if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
                     dbus::enable_unit_files(timer_path);
                     switch.set_state(true);
