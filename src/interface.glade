@@ -28,6 +28,48 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
   <!-- interface-description A GTK3-based Systemd Service Manager Written in Rust -->
   <!-- interface-copyright 2016 -->
   <!-- interface-authors Michael Aaron Murphy <mmstickman@gmail.com> -->
+  <object class="GtkPopoverMenu" id="systemd_menu_popover">
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkButton" id="systemd_units">
+            <property name="label" translatable="yes">Systemd Units</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="focus_on_click">False</property>
+            <property name="receives_default">True</property>
+            <property name="relief">none</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="systemd_analyze">
+            <property name="label" translatable="yes">Systemd Analayze</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="relief">none</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="submenu">main</property>
+      </packing>
+    </child>
+  </object>
   <object class="GtkPopoverMenu" id="unit_menu_popover">
     <property name="can_focus">False</property>
     <child>
@@ -77,6 +119,9 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
             <property name="position">2</property>
           </packing>
         </child>
+        <child>
+          <placeholder/>
+        </child>
       </object>
       <packing>
         <property name="submenu">main</property>
@@ -89,121 +134,108 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
     <property name="default_height">600</property>
     <property name="icon_name">preferences-system</property>
     <child>
-      <object class="GtkBox">
+      <object class="GtkStack" id="main_window_stack">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <child>
-          <object class="GtkBox" id="left_pane">
+          <object class="GtkBox" id="systemd_units_stack">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="orientation">vertical</property>
             <child>
-              <object class="GtkStack" id="unit_stack">
+              <object class="GtkBox" id="left_pane">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="transition_type">crossfade</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkScrolledWindow" id="services_window">
-                    <property name="name">Services</property>
+                  <object class="GtkStack" id="unit_stack">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">never</property>
-                    <property name="shadow_type">in</property>
+                    <property name="can_focus">False</property>
+                    <property name="transition_type">crossfade</property>
                     <child>
-                      <object class="GtkViewport" id="services_viewport">
+                      <object class="GtkScrolledWindow" id="services_window">
+                        <property name="name">Services</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">never</property>
+                        <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkListBox" id="services_list">
+                          <object class="GtkViewport" id="services_viewport">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkListBox" id="services_list">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
+                      <packing>
+                        <property name="name">Services</property>
+                        <property name="title" translatable="yes">Services</property>
+                      </packing>
                     </child>
-                  </object>
-                  <packing>
-                    <property name="name">Services</property>
-                    <property name="title" translatable="yes">Services</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkScrolledWindow" id="sockets_window">
-                    <property name="name">Sockets</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">never</property>
-                    <property name="shadow_type">in</property>
                     <child>
-                      <object class="GtkViewport" id="sockets_viewport">
+                      <object class="GtkScrolledWindow" id="sockets_window">
+                        <property name="name">Sockets</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">never</property>
+                        <property name="shadow_type">in</property>
                         <child>
-                          <object class="GtkListBox" id="sockets_list">
+                          <object class="GtkViewport" id="sockets_viewport">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkListBox" id="sockets_list">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
+                      <packing>
+                        <property name="name">Sockets</property>
+                        <property name="title" translatable="yes">Sockets</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkScrolledWindow" id="timers_window">
+                        <property name="name">Timers</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">never</property>
+                        <property name="shadow_type">in</property>
+                        <child>
+                          <object class="GtkViewport" id="timers_viewport">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkListBox" id="timers_list">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="name">Timers</property>
+                        <property name="title" translatable="yes">Timers</property>
+                        <property name="position">2</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
-                    <property name="name">Sockets</property>
-                    <property name="title" translatable="yes">Sockets</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="pack_type">end</property>
                     <property name="position">1</property>
                   </packing>
                 </child>
-                <child>
-                  <object class="GtkScrolledWindow" id="timers_window">
-                    <property name="name">Timers</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">never</property>
-                    <property name="shadow_type">in</property>
-                    <child>
-                      <object class="GtkViewport" id="timers_viewport">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkListBox" id="timers_list">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="name">Timers</property>
-                    <property name="title" translatable="yes">Timers</property>
-                    <property name="position">2</property>
-                  </packing>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="pack_type">end</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox" id="right_pane">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="orientation">vertical</property>
-            <child>
-              <object class="GtkStackSwitcher">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="stack">info_stack</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -212,179 +244,125 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
               </packing>
             </child>
             <child>
-              <object class="GtkStack" id="info_stack">
+              <object class="GtkBox" id="right_pane">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="transition_type">crossfade</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkBox" id="unit_file_stack">
+                  <object class="GtkStackSwitcher">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkScrolledWindow">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="shadow_type">in</property>
-                        <child>
-                          <object class="GtkTextView" id="unit_info">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="wrap_mode">word-char</property>
-                            <property name="left_margin">5</property>
-                            <property name="right_margin">5</property>
-                            <property name="monospace">True</property>
-                          </object>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="save_button">
-                        <property name="label">gtk-save</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_stock">True</property>
-                        <property name="always_show_image">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
+                    <property name="stack">info_stack</property>
                   </object>
                   <packing>
-                    <property name="name">Unit File</property>
-                    <property name="title" translatable="yes">Unit File</property>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox" id="unit_journal_stack">
+                  <object class="GtkStack" id="info_stack">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
+                    <property name="transition_type">crossfade</property>
                     <child>
-                      <object class="GtkScrolledWindow">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="shadow_type">in</property>
-                        <child>
-                          <object class="GtkTextView" id="unit_journal_view">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="editable">False</property>
-                            <property name="accepts_tab">False</property>
-                          </object>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="refresh_log_button">
-                        <property name="label" translatable="yes">Refresh</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="name">Unit Journal</property>
-                    <property name="title" translatable="yes">Unit Journal</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkBox" id="systemd_analyze_stack">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkBox">
+                      <object class="GtkBox" id="unit_file_stack">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkLabel">
+                          <object class="GtkScrolledWindow">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Total Time:</property>
-                            <attributes>
-                              <attribute name="weight" value="medium"/>
-                            </attributes>
+                            <property name="can_focus">True</property>
+                            <property name="shadow_type">in</property>
+                            <child>
+                              <object class="GtkTextView" id="unit_info">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="wrap_mode">word-char</property>
+                                <property name="left_margin">5</property>
+                                <property name="right_margin">5</property>
+                                <property name="monospace">True</property>
+                              </object>
+                            </child>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
+                            <property name="expand">True</property>
                             <property name="fill">True</property>
-                            <property name="padding">5</property>
                             <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="time_to_boot">
+                          <object class="GtkButton" id="save_button">
+                            <property name="label">gtk-save</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">sdf</property>
-                            <attributes>
-                              <attribute name="weight" value="medium"/>
-                            </attributes>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_stock">True</property>
+                            <property name="always_show_image">True</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">True</property>
-                            <property name="padding">5</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="padding">5</property>
-                        <property name="position">0</property>
+                        <property name="name">Unit File</property>
+                        <property name="title" translatable="yes">Unit File</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkScrolledWindow">
+                      <object class="GtkBox" id="unit_journal_stack">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="shadow_type">in</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkTreeView" id="analyze_tree">
+                          <object class="GtkScrolledWindow">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="rules_hint">True</property>
-                            <child internal-child="selection">
-                              <object class="GtkTreeSelection"/>
+                            <property name="shadow_type">in</property>
+                            <child>
+                              <object class="GtkTextView" id="unit_journal_view">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="editable">False</property>
+                                <property name="accepts_tab">False</property>
+                              </object>
                             </child>
                           </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="refresh_log_button">
+                            <property name="label" translatable="yes">Refresh</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
+                        <property name="name">Unit Journal</property>
+                        <property name="title" translatable="yes">Unit Journal</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
                   </object>
                   <packing>
-                    <property name="name">Analyze</property>
-                    <property name="title" translatable="yes">Analyze</property>
-                    <property name="position">2</property>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </object>
@@ -396,8 +374,85 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
             </child>
           </object>
           <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
+            <property name="name">Systemd Units</property>
+            <property name="title" translatable="yes">Systemd Units</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="systemd_analyze_stack">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Total Time:</property>
+                    <attributes>
+                      <attribute name="weight" value="medium"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="padding">5</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="time_to_boot">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">sdf</property>
+                    <attributes>
+                      <attribute name="weight" value="medium"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="padding">5</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="padding">5</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="analyze_tree">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="rules_hint">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection"/>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="name">Systemd Analyze</property>
+            <property name="title" translatable="yes">Systemd Analyze</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -418,6 +473,21 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="popover">systemd_menu_popover</property>
+                <child>
+                  <object class="GtkLabel" id="systemd_menu_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Systemd Units</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuButton">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
                 <property name="popover">unit_menu_popover</property>
                 <child>
                   <object class="GtkLabel" id="unit_menu_label">
@@ -427,6 +497,10 @@ Author: Michael Aaron Murphy <mmstickman@gmail.com>
                   </object>
                 </child>
               </object>
+              <packing>
+                <property name="pack_type">end</property>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
