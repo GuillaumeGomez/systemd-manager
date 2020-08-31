@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ "$(cat /etc/os-release | grep Ubuntu)" ]; then
+if [ "$(cat /etc/os-release | grep ubuntu)" ]; then
     sudo apt install libgtk-3-dev
     cargo build --release
     version=$(cat Cargo.toml | grep version | awk -F\" '{print $2}')
