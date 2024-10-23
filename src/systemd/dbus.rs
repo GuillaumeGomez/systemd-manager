@@ -95,7 +95,7 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
             let name: String = name.chars().skip(14).take_while(|x| *x != '\"').collect();
             let utype = UnitType::new(&name);
             let state = UnitState::new(iterator.next().unwrap());
-            systemd_units.push(SystemdUnit{name: name, state: state, utype: utype});
+            systemd_units.push(SystemdUnit{name, state, utype});
         }
 
         systemd_units.sort_by(|a, b| a.name.cmp(&b.name));

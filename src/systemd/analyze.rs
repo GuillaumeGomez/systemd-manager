@@ -23,7 +23,7 @@ impl Analyze {
 
         String::from_utf8(Command::new("systemd-analyze").arg("blame").output().unwrap().stdout).unwrap()
             .lines().rev().map(|x| {
-                let mut iterator = x.trim().split_whitespace();
+                let mut iterator = x.split_whitespace();
                 Analyze {
                     time: parse_time(iterator.next().unwrap()),
                     service: String::from(iterator.next().unwrap())
