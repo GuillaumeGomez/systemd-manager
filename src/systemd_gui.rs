@@ -81,25 +81,25 @@ fn setup_systemd_analyze(builder: &gtk::Builder) {
 }
 
 /// Updates the associated journal `TextView` with the contents of the unit's journal log.
-fn update_journal(journal: &gtk::TextView, unit_path: &str) {
+fn update_journal(journal: &gtk::TextView, unit_path: &str, user: bool) {
     journal
         .get_buffer()
         .unwrap()
-        .set_text(get_unit_journal(unit_path).as_str());
+        .set_text(get_unit_journal(unit_path, user).as_str());
 }
 
 /// Obtains the journal log for the given unit.
-fn get_unit_journal(unit_path: &str) -> String {
-    let log = String::from_utf8(
-        Command::new("journalctl")
-            .arg("-b")
-            .arg("-u")
-            .arg(Path::new(unit_path).file_stem().unwrap().to_str().unwrap())
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap();
+fn get_unit_journal(unit_path: &str, user: bool) -> String {
+    let mut command = Command::new("journalctl");
+    if user {
+        command.arg("--user");
+    }
+    command
+        .arg("-b")
+        .arg("-u")
+        .arg(Path::new(unit_path).file_stem().unwrap().to_str().unwrap());
+
+    let log = String::from_utf8(command.output().unwrap().stdout).unwrap();
     log.lines()
         .rev()
         .map(|x| x.trim())
@@ -179,6 +179,7 @@ pub fn launch(config: Config) {
 
     let handle = dbus::DbusHandle::new(config.bus_type);
     let handle = std::rc::Rc::new(handle);
+    let usermode = config.user();
 
     // List of all unit files on the system
     let unit_files = handle.list_unit_files();
@@ -215,7 +216,7 @@ pub fn launch(config: Config) {
                 .set_text(description.as_str());
             ablement_switch.set_active(handle.get_unit_file_state(get_filename(&service.name)));
             ablement_switch.set_state(ablement_switch.get_active());
-            update_journal(&unit_journal, &service.name);
+            update_journal(&unit_journal, &service.name, usermode);
             header.set_label(get_filename(&service.name));
         });
     }
@@ -253,7 +254,7 @@ pub fn launch(config: Config) {
             ablement_switch
                 .set_active(handle.get_unit_file_state(get_filename(socket.name.as_str())));
             ablement_switch.set_state(true);
-            update_journal(&unit_journal, socket.name.as_str());
+            update_journal(&unit_journal, socket.name.as_str(), usermode);
             header.set_label(get_filename(socket.name.as_str()));
         });
     }
@@ -290,7 +291,7 @@ pub fn launch(config: Config) {
                 .set_text(description.as_str());
             ablement_switch.set_active(handle.get_unit_file_state(get_filename(&timer.name)));
             ablement_switch.set_state(true);
-            update_journal(&unit_journal, timer.name.as_str());
+            update_journal(&unit_journal, timer.name.as_str(), usermode);
             header.set_label(get_filename(timer.name.as_str()));
         });
     }
@@ -488,17 +489,17 @@ pub fn launch(config: Config) {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    update_journal(&unit_journal, &service.name);
+                    update_journal(&unit_journal, &service.name, usermode);
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    update_journal(&unit_journal, socket.name.as_str());
+                    update_journal(&unit_journal, socket.name.as_str(), usermode);
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    update_journal(&unit_journal, timer.name.as_str());
+                    update_journal(&unit_journal, timer.name.as_str(), usermode);
                 }
                 _ => unreachable!(),
             }

@@ -29,6 +29,12 @@ pub struct Config {
     bus_type: dbus::BusType,
 }
 
+impl Config {
+    pub fn user(&self) -> bool {
+        self.bus_type == dbus::BusType::Session
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
