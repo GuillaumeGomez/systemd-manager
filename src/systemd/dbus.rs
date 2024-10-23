@@ -28,7 +28,7 @@ pub struct SystemdUnit {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer }
+pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer, Swap }
 impl UnitType {
     /// Takes the pathname of the unit as input to determine what type of unit it is.
     pub fn new(pathname: &str) -> UnitType {
@@ -43,13 +43,14 @@ impl UnitType {
             "socket" => UnitType::Socket,
             "target" => UnitType::Target,
             "timer" => UnitType::Timer,
+            "swap" => UnitType::Swap,
             _ => panic!("Unknown Type: {}", pathname),
         }
     }
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum UnitState { Bad, Disabled, Enabled, Indirect, Linked, Masked, Static }
+pub enum UnitState { Bad, Disabled, Enabled, Indirect, Linked, Masked, Static, Generated, Alias, Transient }
 impl UnitState {
     /// Takes the string containing the state information from the dbus message and converts it
     /// into a UnitType by matching the first character.
@@ -63,6 +64,9 @@ impl UnitState {
             'l' => UnitState::Linked,
             'm' => UnitState::Masked,
             'b' => UnitState::Bad,
+            'g' => UnitState::Generated,
+            'a' => UnitState::Alias,
+            't' => UnitState::Transient,
             _ => panic!("Unknown State: {}", x),
         }
     }
