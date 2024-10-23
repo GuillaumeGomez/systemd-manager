@@ -4,24 +4,25 @@ use std::{path::Path, sync::Mutex};
 /// Takes a systemd dbus function as input and returns the result as a `dbus::Message`.
 macro_rules! dbus_message {
     ($function:expr) => {{
-        let dest      = "org.freedesktop.systemd1";
-        let node      = "/org/freedesktop/systemd1";
+        let dest = "org.freedesktop.systemd1";
+        let node = "/org/freedesktop/systemd1";
         let interface = "org.freedesktop.systemd1.Manager";
-        dbus::Message::new_method_call(dest, node, interface, $function).
-            unwrap_or_else(|e| panic!("{}", e))
-    }}
+        dbus::Message::new_method_call(dest, node, interface, $function)
+            .unwrap_or_else(|e| panic!("{}", e))
+    }};
 }
 
-/// The bus type to send messages on. Determines whether we're controlling the system or the user systemd units. 
+/// The bus type to send messages on. Determines whether we're controlling the system or the user systemd units.
 /// TODO: sort of a hack; the better solution would be to pass the various settings around in a struct.
 pub static BUS_TYPE: Mutex<dbus::BusType> = Mutex::new(dbus::BusType::System);
 
 /// Takes a `dbus::Message` as input and makes a connection to dbus, returning the reply.
 macro_rules! dbus_connect {
     ($message:expr) => {
-        dbus::Connection::get_private(*BUS_TYPE.lock().unwrap()).unwrap().
-            send_with_reply_and_block($message, 4000)
-    }
+        dbus::Connection::get_private(*BUS_TYPE.lock().unwrap())
+            .unwrap()
+            .send_with_reply_and_block($message, 4000)
+    };
 }
 
 #[derive(Clone)]
@@ -32,7 +33,19 @@ pub struct SystemdUnit {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum UnitType { Automount, Busname, Mount, Path, Scope, Service, Slice, Socket, Target, Timer, Swap }
+pub enum UnitType {
+    Automount,
+    Busname,
+    Mount,
+    Path,
+    Scope,
+    Service,
+    Slice,
+    Socket,
+    Target,
+    Timer,
+    Swap,
+}
 impl UnitType {
     /// Takes the pathname of the unit as input to determine what type of unit it is.
     pub fn new(pathname: &str) -> UnitType {
@@ -54,7 +67,18 @@ impl UnitType {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub enum UnitState { Bad, Disabled, Enabled, Indirect, Linked, Masked, Static, Generated, Alias, Transient }
+pub enum UnitState {
+    Bad,
+    Disabled,
+    Enabled,
+    Indirect,
+    Linked,
+    Masked,
+    Static,
+    Generated,
+    Alias,
+    Transient,
+}
 impl UnitState {
     /// Takes the string containing the state information from the dbus message and converts it
     /// into a UnitType by matching the first character.
@@ -82,7 +106,7 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
     fn parse_message(input: &str) -> Vec<SystemdUnit> {
         let message = {
             let mut output: String = input.chars().skip(7).collect();
-            let len = output.len()-10;
+            let len = output.len() - 10;
             output.truncate(len);
             output
         };
@@ -95,21 +119,25 @@ pub fn list_unit_files() -> Vec<SystemdUnit> {
             let name: String = name.chars().skip(14).take_while(|x| *x != '\"').collect();
             let utype = UnitType::new(&name);
             let state = UnitState::new(iterator.next().unwrap());
-            systemd_units.push(SystemdUnit{name, state, utype});
+            systemd_units.push(SystemdUnit { name, state, utype });
         }
 
         systemd_units.sort_by(|a, b| a.name.cmp(&b.name));
         systemd_units
     }
 
-    let message = dbus_connect!(dbus_message!("ListUnitFiles")).unwrap().get_items();
+    let message = dbus_connect!(dbus_message!("ListUnitFiles"))
+        .unwrap()
+        .get_items();
     parse_message(&format!("{:?}", message))
 }
 
 /// Returns the current enablement status of the unit
 pub fn get_unit_file_state(path: &str) -> bool {
     for unit in list_unit_files() {
-        if unit.name.as_str() == path { return unit.state == UnitState::Enabled; }
+        if unit.name.as_str() == path {
+            return unit.state == UnitState::Enabled;
+        }
     }
     false
 }
@@ -117,22 +145,41 @@ pub fn get_unit_file_state(path: &str) -> bool {
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing services which can be enabled and
 /// disabled.
 pub fn collect_togglable_services(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
-    units.iter().filter(|x| x.utype == UnitType::Service && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled) && !x.name.contains("/etc/")).cloned().collect()
+    units
+        .iter()
+        .filter(|x| {
+            x.utype == UnitType::Service
+                && (x.state == UnitState::Enabled || x.state == UnitState::Disabled)
+                && !x.name.contains("/etc/")
+        })
+        .cloned()
+        .collect()
 }
 
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing sockets which can be enabled and
 /// disabled.
 pub fn collect_togglable_sockets(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
-    units.iter().filter(|x| x.utype == UnitType::Socket && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).cloned().collect()
+    units
+        .iter()
+        .filter(|x| {
+            x.utype == UnitType::Socket
+                && (x.state == UnitState::Enabled || x.state == UnitState::Disabled)
+        })
+        .cloned()
+        .collect()
 }
 
 /// Takes a `Vec<SystemdUnit>` as input and returns a new vector only containing timers which can be enabled and
 /// disabled.
 pub fn collect_togglable_timers(units: &[SystemdUnit]) -> Vec<SystemdUnit> {
-    units.iter().filter(|x| x.utype == UnitType::Timer && (x.state == UnitState::Enabled ||
-        x.state == UnitState::Disabled)).cloned().collect()
+    units
+        .iter()
+        .filter(|x| {
+            x.utype == UnitType::Timer
+                && (x.state == UnitState::Enabled || x.state == UnitState::Disabled)
+        })
+        .cloned()
+        .collect()
 }
 
 /// Takes the unit pathname of a service and enables it via dbus.
@@ -148,7 +195,7 @@ pub fn enable_unit_files(unit: &str) -> Option<String> {
                 println!("{} has been enabled", unit);
             }
             None
-        },
+        }
         Err(reply) => {
             let error = format!("Error enabling {}:\n{:?}", unit, reply);
             println!("{}", error);
@@ -170,7 +217,7 @@ pub fn disable_unit_files(unit: &str) -> Option<String> {
                 println!("{} has been disabled", unit);
             }
             None
-        },
+        }
         Err(reply) => {
             let error = format!("Error disabling {}:\n{:?}", unit, reply);
             println!("{}", error);
@@ -187,13 +234,12 @@ pub fn start_unit(unit: &str) -> Option<String> {
         Ok(_) => {
             println!("{} successfully started", unit);
             None
-        },
+        }
         Err(error) => {
             let output = format!("{} failed to start:\n{:?}", unit, error);
             println!("{}", output);
             Some(output)
         }
-
     }
 }
 
@@ -205,7 +251,7 @@ pub fn stop_unit(unit: &str) -> Option<String> {
         Ok(_) => {
             println!("{} successfully stopped", unit);
             None
-        },
+        }
         Err(error) => {
             let output = format!("{} failed to stop:\n{:?}", unit, error);
             println!("{}", output);
