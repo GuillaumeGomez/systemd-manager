@@ -291,8 +291,8 @@ pub fn launch(config: Config) {
                 .set_text(description.as_str());
             ablement_switch.set_active(handle.get_unit_file_state(get_filename(&timer.name)));
             ablement_switch.set_state(true);
-            update_journal(&unit_journal, timer.name.as_str(), usermode);
-            header.set_label(get_filename(timer.name.as_str()));
+            update_journal(&unit_journal, &timer.name, usermode);
+            header.set_label(get_filename(&timer.name));
         });
     }
 
@@ -311,37 +311,37 @@ pub fn launch(config: Config) {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    let service_path = get_filename(&service.name);
-                    if enabled && !handle.get_unit_file_state(get_filename(&service.name)) {
-                        handle.enable_unit_files(service_path);
+                    let service_name = get_filename(&service.name);
+                    if enabled && !handle.get_unit_file_state(service_name) {
+                        handle.enable_unit_files(service_name);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(get_filename(&service.name)) {
-                        handle.disable_unit_files(service_path);
+                    } else if !enabled && handle.get_unit_file_state(service_name) {
+                        handle.disable_unit_files(service_name);
                         switch.set_state(false);
                     }
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    let socket_path = get_filename(socket.name.as_str());
-                    if enabled && !handle.get_unit_file_state(get_filename(&socket.name)) {
-                        handle.enable_unit_files(socket_path);
+                    let socket_name = get_filename(&socket.name);
+                    if enabled && !handle.get_unit_file_state(socket_name) {
+                        handle.enable_unit_files(socket_name);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(get_filename(&socket.name)) {
-                        handle.disable_unit_files(socket_path);
+                    } else if !enabled && handle.get_unit_file_state(socket_name) {
+                        handle.disable_unit_files(socket_name);
                         switch.set_state(false);
                     }
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    let timer_path = get_filename(&timer.name);
+                    let timer_name = get_filename(&timer.name);
 
-                    if enabled && !handle.get_unit_file_state(get_filename(&timer.name)) {
-                        handle.enable_unit_files(timer_path);
+                    if enabled && !handle.get_unit_file_state(timer_name) {
+                        handle.enable_unit_files(timer_name);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(get_filename(&timer.name)) {
-                        handle.disable_unit_files(timer_path);
+                    } else if !enabled && handle.get_unit_file_state(timer_name) {
+                        handle.disable_unit_files(timer_name);
                         switch.set_state(false);
                     }
                 }
@@ -383,10 +383,7 @@ pub fn launch(config: Config) {
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    if handle
-                        .start_unit(get_filename(timer.name.as_str()))
-                        .is_none()
-                    {
+                    if handle.start_unit(get_filename(&timer.name)).is_none() {
                         update_icon(&timers_icons[index as usize], true);
                     }
                 }
