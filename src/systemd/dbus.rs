@@ -1,5 +1,5 @@
 extern crate dbus;
-use std::path::Path;
+use std::{path::Path, sync::Mutex};
 
 /// Takes a systemd dbus function as input and returns the result as a `dbus::Message`.
 macro_rules! dbus_message {
@@ -12,10 +12,14 @@ macro_rules! dbus_message {
     }}
 }
 
+/// The bus type to send messages on. Determines whether we're controlling the system or the user systemd units. 
+/// TODO: sort of a hack; the better solution would be to pass the various settings around in a struct.
+pub static BUS_TYPE: Mutex<dbus::BusType> = Mutex::new(dbus::BusType::System);
+
 /// Takes a `dbus::Message` as input and makes a connection to dbus, returning the reply.
 macro_rules! dbus_connect {
     ($message:expr) => {
-        dbus::Connection::get_private(dbus::BusType::System).unwrap().
+        dbus::Connection::get_private(*BUS_TYPE.lock().unwrap()).unwrap().
             send_with_reply_and_block($message, 4000)
     }
 }
