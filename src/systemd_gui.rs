@@ -5,7 +5,7 @@ use systemd::analyze::Analyze;
 use systemd::dbus::{self, UnitState};
 
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
@@ -42,10 +42,7 @@ fn create_row(
 
 /// Read the unit file and return it's contents so that we can display it in the `gtk::TextView`.
 fn get_unit_info<P: AsRef<Path>>(path: P) -> String {
-    let mut file = fs::File::open(path).unwrap();
-    let mut output = String::new();
-    let _ = file.read_to_string(&mut output);
-    output
+    fs::read_to_string(path).unwrap()
 }
 
 /// Use `systemd-analyze blame` to fill out the information for the Analyze `gtk::Stack`.
@@ -188,7 +185,7 @@ pub fn launch() {
         let mut unit_row = gtk::ListBoxRow::new();
         create_row(
             &mut unit_row,
-            Path::new(service.name.as_str()),
+            Path::new(&service.name),
             service.state,
             &mut services_icons,
         );
@@ -205,15 +202,15 @@ pub fn launch() {
         services_list.connect_row_selected(move |_, row| {
             let index = row.unwrap().get_index();
             let service = &services[index as usize];
-            let description = get_unit_info(service.name.as_str());
+            let description = get_unit_info(&service.name);
             unit_info
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(service.name.as_str()));
+            ablement_switch.set_active(dbus::get_unit_file_state(&service.name));
             ablement_switch.set_state(ablement_switch.get_active());
-            update_journal(&unit_journal, service.name.as_str());
-            header.set_label(get_filename(service.name.as_str()));
+            update_journal(&unit_journal, &service.name);
+            header.set_label(get_filename(&service.name));
         });
     }
 
@@ -304,10 +301,10 @@ pub fn launch() {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
                     let service_path = get_filename(&service.name);
-                    if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
+                    if enabled && !dbus::get_unit_file_state(&service.name) {
                         dbus::enable_unit_files(service_path);
                         switch.set_state(true);
-                    } else if !enabled && dbus::get_unit_file_state(service.name.as_str()) {
+                    } else if !enabled && dbus::get_unit_file_state(&service.name) {
                         dbus::disable_unit_files(service_path);
                         switch.set_state(false);
                     }
@@ -477,7 +474,7 @@ pub fn launch() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    update_journal(&unit_journal, service.name.as_str());
+                    update_journal(&unit_journal, &service.name);
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();

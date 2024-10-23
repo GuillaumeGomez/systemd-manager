@@ -13,7 +13,7 @@ macro_rules! dbus_message {
 }
 
 /// The bus type to send messages on. Determines whether we're controlling the system or the user systemd units.
-/// TODO: sort of a hack; the better solution would be to pass the various settings around in a struct.
+/// TODO: sort of a hack; the better solution would be to pass the bus type along with other settings around in a struct.
 pub static BUS_TYPE: Mutex<dbus::BusType> = Mutex::new(dbus::BusType::System);
 
 /// Takes a `dbus::Message` as input and makes a connection to dbus, returning the reply.
