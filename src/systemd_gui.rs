@@ -2,7 +2,7 @@ use systemd::dbus::{self, UnitState};
 use systemd::analyze::Analyze;
 use gtk;
 use gtk::prelude::*;
-use gdk::enums::key;
+use gdk::keys::constants;
 
 use std::fs;
 use std::io::{Read, Write};
@@ -11,7 +11,7 @@ use std::process::Command;
 
 /// Updates the status icon for the selected unit
 fn update_icon(icon: &gtk::Image, state: bool) {
-    if state { icon.set_from_stock("gtk-yes", 4); } else { icon.set_from_stock("gtk-no", 4); }
+    if state { icon.set_from_icon_name(Some("gtk-yes"), gtk::IconSize::Button); } else { icon.set_from_icon_name(Some("gtk-no"), gtk::IconSize::Button); }
 }
 
 /// Create a `gtk::ListboxRow` and add it to the `gtk::ListBox`, and then add the `gtk::Image` to a vector so that we can later modify
@@ -21,9 +21,9 @@ fn create_row(row: &mut gtk::ListBoxRow, path: &Path, state: UnitState, state_ic
     let unit_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     let unit_label = gtk::Label::new(Some(filename));
     let image = if state == UnitState::Enabled {
-        gtk::Image::new_from_stock("gtk-yes", 4)
+        gtk::Image::from_icon_name(Some("gtk-yes"), gtk::IconSize::Button)
     } else {
-        gtk::Image::new_from_stock("gtk-no", 4)
+        gtk::Image::from_icon_name(Some("gtk-no"), gtk::IconSize::Button)
     };
     unit_box.add(&unit_label);
     unit_box.pack_end(&image, false, false, 15);
@@ -42,7 +42,7 @@ fn get_unit_info<P: AsRef<Path>>(path: P) -> String {
 /// Use `systemd-analyze blame` to fill out the information for the Analyze `gtk::Stack`.
 fn setup_systemd_analyze(builder: &gtk::Builder) {
     let analyze_tree: gtk::TreeView = builder.get_object("analyze_tree").unwrap();
-    let analyze_store = gtk::ListStore::new(&[gtk::Type::U32, gtk::Type::String]);
+    let analyze_store = gtk::ListStore::new(&[glib::types::Type::U32, glib::types::Type::String]);
 
     // A simple macro for adding a column to the preview tree.
     macro_rules! add_column {
@@ -93,7 +93,7 @@ fn get_filename<'a>(path: &'a str) -> &str {
 pub fn launch() {
     gtk::init().unwrap_or_else(|_| panic!("tv-renamer: failed to initialize GTK."));
 
-    let builder = gtk::Builder::new_from_string(include_str!("interface.glade"));
+    let builder = gtk::Builder::from_string(include_str!("interface.glade"));
     let window: gtk::Window               = builder.get_object("main_window").unwrap();
     let unit_stack: gtk::Stack            = builder.get_object("unit_stack").unwrap();
     let services_list: gtk::ListBox       = builder.get_object("services_list").unwrap();
@@ -439,7 +439,7 @@ pub fn launch() {
 
     // Define custom actions on keypress
     window.connect_key_press_event(move |_, key| {
-        if let key::Escape = key.get_keyval() { gtk::main_quit() }
+        if let constants::Escape = key.get_keyval() { gtk::main_quit() }
         gtk::Inhibit(false)
     });
 
