@@ -9,6 +9,8 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
+use crate::Config;
+
 /// Updates the status icon for the selected unit
 fn update_icon(icon: &gtk::Image, state: bool) {
     if state {
@@ -113,7 +115,7 @@ fn get_filename(path: &str) -> &str {
         .unwrap_or_else(|| panic!("Filename {:?} wasn't valid unicode", filename))
 }
 
-pub fn launch() {
+pub fn launch(config: Config) {
     gtk::init().unwrap_or_else(|_| panic!("tv-renamer: failed to initialize GTK."));
 
     let builder = gtk::Builder::from_string(include_str!("interface.glade"));
@@ -175,8 +177,11 @@ pub fn launch() {
     // Setup the Analyze stack
     setup_systemd_analyze(&builder);
 
+    let handle = dbus::DbusHandle::new(config.bus_type);
+    let handle = std::rc::Rc::new(handle);
+
     // List of all unit files on the system
-    let unit_files = dbus::list_unit_files();
+    let unit_files = handle.list_unit_files();
 
     // NOTE: Services
     let services = dbus::collect_togglable_services(&unit_files);
@@ -199,6 +204,7 @@ pub fn launch() {
         let ablement_switch = ablement_switch.clone();
         let unit_journal = unit_journal.clone();
         let header = right_header.clone();
+        let handle = handle.clone();
         services_list.connect_row_selected(move |_, row| {
             let index = row.unwrap().get_index();
             let service = &services[index as usize];
@@ -207,7 +213,7 @@ pub fn launch() {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(&service.name));
+            ablement_switch.set_active(handle.get_unit_file_state(&service.name));
             ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, &service.name);
             header.set_label(get_filename(&service.name));
@@ -235,6 +241,7 @@ pub fn launch() {
         let ablement_switch = ablement_switch.clone();
         let unit_journal = unit_journal.clone();
         let header = right_header.clone();
+        let handle = handle.clone();
         sockets_list.connect_row_selected(move |_, row| {
             let index = row.unwrap().get_index();
             let socket = &sockets[index as usize];
@@ -243,7 +250,7 @@ pub fn launch() {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(socket.name.as_str()));
+            ablement_switch.set_active(handle.get_unit_file_state(socket.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, socket.name.as_str());
             header.set_label(get_filename(socket.name.as_str()));
@@ -271,6 +278,7 @@ pub fn launch() {
         let ablement_switch = ablement_switch.clone();
         let unit_journal = unit_journal.clone();
         let header = right_header.clone();
+        let handle = handle.clone();
         timers_list.connect_row_selected(move |_, row| {
             let index = row.unwrap().get_index();
             let timer = &timers[index as usize];
@@ -279,7 +287,7 @@ pub fn launch() {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(dbus::get_unit_file_state(timer.name.as_str()));
+            ablement_switch.set_active(handle.get_unit_file_state(timer.name.as_str()));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, timer.name.as_str());
             header.set_label(get_filename(timer.name.as_str()));
@@ -295,17 +303,18 @@ pub fn launch() {
         let timers = timers.clone();
         let timers_list = timers_list.clone();
         let unit_stack = unit_stack.clone();
+        let handle = handle.clone();
         ablement_switch.connect_state_set(move |switch, enabled| {
             match unit_stack.get_visible_child_name().unwrap().as_str() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
                     let service_path = get_filename(&service.name);
-                    if enabled && !dbus::get_unit_file_state(&service.name) {
-                        dbus::enable_unit_files(service_path);
+                    if enabled && !handle.get_unit_file_state(&service.name) {
+                        handle.enable_unit_files(service_path);
                         switch.set_state(true);
-                    } else if !enabled && dbus::get_unit_file_state(&service.name) {
-                        dbus::disable_unit_files(service_path);
+                    } else if !enabled && handle.get_unit_file_state(&service.name) {
+                        handle.disable_unit_files(service_path);
                         switch.set_state(false);
                     }
                 }
@@ -313,11 +322,11 @@ pub fn launch() {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
                     let socket_path = get_filename(socket.name.as_str());
-                    if enabled && !dbus::get_unit_file_state(socket.name.as_str()) {
-                        dbus::enable_unit_files(socket_path);
+                    if enabled && !handle.get_unit_file_state(socket.name.as_str()) {
+                        handle.enable_unit_files(socket_path);
                         switch.set_state(true);
-                    } else if !enabled && dbus::get_unit_file_state(socket.name.as_str()) {
-                        dbus::disable_unit_files(socket_path);
+                    } else if !enabled && handle.get_unit_file_state(socket.name.as_str()) {
+                        handle.disable_unit_files(socket_path);
                         switch.set_state(false);
                     }
                 }
@@ -326,11 +335,11 @@ pub fn launch() {
                     let timer = &timers[index as usize];
                     let timer_path = get_filename(&timer.name);
 
-                    if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
-                        dbus::enable_unit_files(timer_path);
+                    if enabled && !handle.get_unit_file_state(timer.name.as_str()) {
+                        handle.enable_unit_files(timer_path);
                         switch.set_state(true);
-                    } else if !enabled && dbus::get_unit_file_state(timer.name.as_str()) {
-                        dbus::disable_unit_files(timer_path);
+                    } else if !enabled && handle.get_unit_file_state(timer.name.as_str()) {
+                        handle.disable_unit_files(timer_path);
                         switch.set_state(false);
                     }
                 }
@@ -352,26 +361,30 @@ pub fn launch() {
         let sockets_icons = sockets_icons.clone();
         let timers_icons = timers_icons.clone();
         let unit_stack = unit_stack.clone();
+        let handle = handle.clone();
         start_button.connect_clicked(move |_| {
             match unit_stack.get_visible_child_name().unwrap().as_str() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    if dbus::start_unit(get_filename(&service.name)).is_none() {
+                    if handle.start_unit(get_filename(&service.name)).is_none() {
                         update_icon(&services_icons[index as usize], true);
                     }
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    if dbus::start_unit(get_filename(&socket.name)).is_none() {
+                    if handle.start_unit(get_filename(&socket.name)).is_none() {
                         update_icon(&sockets_icons[index as usize], true);
                     }
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    if dbus::start_unit(get_filename(timer.name.as_str())).is_none() {
+                    if handle
+                        .start_unit(get_filename(timer.name.as_str()))
+                        .is_none()
+                    {
                         update_icon(&timers_icons[index as usize], true);
                     }
                 }
@@ -397,21 +410,21 @@ pub fn launch() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    if dbus::stop_unit(get_filename(&service.name)).is_none() {
+                    if handle.stop_unit(get_filename(&service.name)).is_none() {
                         update_icon(&services_icons[index as usize], false);
                     }
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    if dbus::stop_unit(get_filename(&socket.name)).is_none() {
+                    if handle.stop_unit(get_filename(&socket.name)).is_none() {
                         update_icon(&sockets_icons[index as usize], false);
                     }
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    if dbus::stop_unit(get_filename(&timer.name)).is_none() {
+                    if handle.stop_unit(get_filename(&timer.name)).is_none() {
                         update_icon(&timers_icons[index as usize], false);
                     }
                 }

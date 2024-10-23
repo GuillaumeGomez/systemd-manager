@@ -1,7 +1,5 @@
 use std::env;
 
-use systemd::dbus::BUS_TYPE;
-
 extern crate gdk;
 extern crate gtk;
 mod systemd_gui; // Contains all of the heavy GUI-related work
@@ -11,15 +9,30 @@ mod systemd {
 }
 
 fn main() {
+    let mut config = Config::default();
     for arg in env::args().skip(1) {
         match arg.as_ref() {
             "--user" => {
-                *BUS_TYPE.lock().unwrap() = dbus::BusType::Session;
+                config.bus_type = dbus::BusType::Session;
             }
             x => {
                 panic!("Unrecognized CLI argument {:?}", x);
             }
         }
     }
-    systemd_gui::launch();
+    systemd_gui::launch(config);
+}
+
+#[derive(Debug, Clone)]
+pub struct Config {
+    /// The bus type to use. Defaults to System, can be instead Session to access the user dbus.
+    bus_type: dbus::BusType,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            bus_type: dbus::BusType::System,
+        }
+    }
 }
