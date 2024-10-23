@@ -213,7 +213,7 @@ pub fn launch(config: Config) {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(handle.get_unit_file_state(&service.name));
+            ablement_switch.set_active(handle.get_unit_file_state(get_filename(&service.name)));
             ablement_switch.set_state(ablement_switch.get_active());
             update_journal(&unit_journal, &service.name);
             header.set_label(get_filename(&service.name));
@@ -250,7 +250,8 @@ pub fn launch(config: Config) {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(handle.get_unit_file_state(socket.name.as_str()));
+            ablement_switch
+                .set_active(handle.get_unit_file_state(get_filename(socket.name.as_str())));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, socket.name.as_str());
             header.set_label(get_filename(socket.name.as_str()));
@@ -287,7 +288,7 @@ pub fn launch(config: Config) {
                 .get_buffer()
                 .unwrap()
                 .set_text(description.as_str());
-            ablement_switch.set_active(handle.get_unit_file_state(timer.name.as_str()));
+            ablement_switch.set_active(handle.get_unit_file_state(get_filename(&timer.name)));
             ablement_switch.set_state(true);
             update_journal(&unit_journal, timer.name.as_str());
             header.set_label(get_filename(timer.name.as_str()));
@@ -310,10 +311,10 @@ pub fn launch(config: Config) {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
                     let service_path = get_filename(&service.name);
-                    if enabled && !handle.get_unit_file_state(&service.name) {
+                    if enabled && !handle.get_unit_file_state(get_filename(&service.name)) {
                         handle.enable_unit_files(service_path);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(&service.name) {
+                    } else if !enabled && handle.get_unit_file_state(get_filename(&service.name)) {
                         handle.disable_unit_files(service_path);
                         switch.set_state(false);
                     }
@@ -322,10 +323,10 @@ pub fn launch(config: Config) {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
                     let socket_path = get_filename(socket.name.as_str());
-                    if enabled && !handle.get_unit_file_state(socket.name.as_str()) {
+                    if enabled && !handle.get_unit_file_state(get_filename(&socket.name)) {
                         handle.enable_unit_files(socket_path);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(socket.name.as_str()) {
+                    } else if !enabled && handle.get_unit_file_state(get_filename(&socket.name)) {
                         handle.disable_unit_files(socket_path);
                         switch.set_state(false);
                     }
@@ -335,10 +336,10 @@ pub fn launch(config: Config) {
                     let timer = &timers[index as usize];
                     let timer_path = get_filename(&timer.name);
 
-                    if enabled && !handle.get_unit_file_state(timer.name.as_str()) {
+                    if enabled && !handle.get_unit_file_state(get_filename(&timer.name)) {
                         handle.enable_unit_files(timer_path);
                         switch.set_state(true);
-                    } else if !enabled && handle.get_unit_file_state(timer.name.as_str()) {
+                    } else if !enabled && handle.get_unit_file_state(get_filename(&timer.name)) {
                         handle.disable_unit_files(timer_path);
                         switch.set_state(false);
                     }

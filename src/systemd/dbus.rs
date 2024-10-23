@@ -137,14 +137,23 @@ impl DbusHandle {
         parse_units_from_message(&format!("{:?}", message))
     }
 
-    /// Returns the current enablement status of the unit
-    pub fn get_unit_file_state(&self, path: &str) -> bool {
-        for unit in self.list_unit_files() {
-            if unit.name.as_str() == path {
-                return unit.state == UnitState::Enabled;
-            }
-        }
-        false
+    /// Returns the current enablement status of the unit. Should be called with a unit name, not a path.
+    pub fn get_unit_file_state(&self, name: &str) -> bool {
+        //GetUnitFileState(in  s file, out s state);
+        let mut msg = dbus_message!("GetUnitFileState");
+        let unitname = if name.contains('/') {
+            let stripped = name.split("/").last().unwrap();
+            println!("Warning: instead of a name, a path {name:?} was passed to get_unit_file_state. Stripping it to {stripped:?}");
+            stripped
+        } else {
+            name
+        };
+        msg.append_items(&[unitname.into()]);
+        let reply = self
+            .send(msg)
+            .unwrap_or_else(|e| panic!("Failure getting the state of unit {}: {:?}", unitname, e));
+        let status: String = reply.get1().unwrap();
+        status.to_lowercase() == "enabled"
     }
 
     /// Takes the unit pathname of a service and enables it via dbus.
