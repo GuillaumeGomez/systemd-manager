@@ -107,9 +107,13 @@ fn get_unit_journal(unit_path: &str) -> String {
         .fold(String::with_capacity(log.len()), |acc, x| acc + "\n" + x)
 }
 
-// TODO: Fix clippy error and start using this everywhere
 fn get_filename(path: &str) -> &str {
-    Path::new(path).file_name().unwrap().to_str().unwrap()
+    let filename = Path::new(path)
+        .file_name()
+        .unwrap_or_else(|| panic!("Couldn't get filename of path {:?}", path));
+    filename
+        .to_str()
+        .unwrap_or_else(|| panic!("Filename {:?} wasn't valid unicode", filename))
 }
 
 pub fn launch() {
@@ -299,11 +303,7 @@ pub fn launch() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    let service_path = Path::new(service.name.as_str())
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap();
+                    let service_path = get_filename(&service.name);
                     if enabled && !dbus::get_unit_file_state(service.name.as_str()) {
                         dbus::enable_unit_files(service_path);
                         switch.set_state(true);
@@ -327,11 +327,8 @@ pub fn launch() {
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    let timer_path = Path::new(timer.name.as_str())
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap();
+                    let timer_path = get_filename(&timer.name);
+
                     if enabled && !dbus::get_unit_file_state(timer.name.as_str()) {
                         dbus::enable_unit_files(timer_path);
                         switch.set_state(true);
@@ -363,45 +360,21 @@ pub fn launch() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    if dbus::start_unit(
-                        Path::new(service.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::start_unit(get_filename(&service.name)).is_none() {
                         update_icon(&services_icons[index as usize], true);
                     }
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    if dbus::start_unit(
-                        Path::new(socket.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::start_unit(get_filename(&socket.name)).is_none() {
                         update_icon(&sockets_icons[index as usize], true);
                     }
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    if dbus::start_unit(
-                        Path::new(timer.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::start_unit(get_filename(timer.name.as_str())).is_none() {
                         update_icon(&timers_icons[index as usize], true);
                     }
                 }
@@ -427,45 +400,21 @@ pub fn launch() {
                 "Services" => {
                     let index = services_list.get_selected_row().unwrap().get_index();
                     let service = &services[index as usize];
-                    if dbus::stop_unit(
-                        Path::new(service.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::stop_unit(get_filename(&service.name)).is_none() {
                         update_icon(&services_icons[index as usize], false);
                     }
                 }
                 "Sockets" => {
                     let index = sockets_list.get_selected_row().unwrap().get_index();
                     let socket = &sockets[index as usize];
-                    if dbus::stop_unit(
-                        Path::new(socket.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::stop_unit(get_filename(&socket.name)).is_none() {
                         update_icon(&sockets_icons[index as usize], false);
                     }
                 }
                 "Timers" => {
                     let index = timers_list.get_selected_row().unwrap().get_index();
                     let timer = &timers[index as usize];
-                    if dbus::stop_unit(
-                        Path::new(timer.name.as_str())
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap(),
-                    )
-                    .is_none()
-                    {
+                    if dbus::stop_unit(get_filename(&timer.name)).is_none() {
                         update_icon(&timers_icons[index as usize], false);
                     }
                 }
