@@ -79,7 +79,7 @@ fn update_journal(journal: &gtk::TextView, unit_path: &str) {
 
 /// Obtains the journal log for the given unit.
 fn get_unit_journal(unit_path: &str) -> String {
-    let log = String::from_utf8(Command::new("journalctl").arg("gdk::enum-b").arg("-u")
+    let log = String::from_utf8(Command::new("journalctl").arg("-b").arg("-u")
         .arg(Path::new(unit_path).file_stem().unwrap().to_str().unwrap())
         .output().unwrap().stdout).unwrap();
     log.lines().rev().map(|x| x.trim()).fold(String::with_capacity(log.len()), |acc, x| acc + "\n" + x)
