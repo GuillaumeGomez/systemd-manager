@@ -1,8 +1,8 @@
 #!/bin/sh
-if [ "$(cat /etc/os-release | grep ubuntu)" ]; then
+if grep -q "ubuntu" "/etc/os-release"; then
     sudo apt install libgtk-3-dev
-    cargo build --release
-    version=$(cat Cargo.toml | grep version | awk -F\" '{print $2}')
+    cargo build --release || exit 1
+    version=$(grep "version" "Cargo.toml" | awk -F\" '{print $2}')
     if [ "$(getconf LONG_BIT)" = "64" ]; then arch=amd64; else arch=i386; fi
     mkdir -p debian/usr/bin
     mkdir -p debian/usr/share/applications
@@ -11,10 +11,10 @@ if [ "$(cat /etc/os-release | grep ubuntu)" ]; then
     cp assets/systemd-manager-pkexec debian/usr/bin/
     cp assets/systemd-manager.desktop debian/usr/share/applications/
     cp assets/org.freedesktop.policykit.systemd-manager.policy debian/usr/share/polkit-1/actions
-    dpkg-deb --build debian systemd-manager_${version}_${arch}.deb
-    sudo dpkg -i systemd-manager_${version}_${arch}.deb
+    dpkg-deb --build debian "systemd-manager_${version}_${arch}.deb" || exit 1
+    sudo dpkg -i "systemd-manager_${version}_${arch}.deb" || exit 1
 else
-    cargo build --release
+    cargo build --release || exit 1
     sudo cp target/release/systemd-manager /usr/bin/
     sudo cp assets/systemd-manager-pkexec /usr/bin/
     sudo cp assets/systemd-manager.desktop /usr/share/applications/
